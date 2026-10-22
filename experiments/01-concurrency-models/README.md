@@ -2,7 +2,7 @@
 
 같은 작업을 순차·스레드·프로세스·asyncio로 돌려 본다. CPU로 계산할 때와 기다리는 시간이 많을 때, 어떤 방식이 얼마나 빠른지 재려 한다. Python의 일반 빌드와 free-threaded 빌드도 비교한다.
 
-2026-10-22 현재 설계 중이다. 아직 `python/bench.py`나 측정 결과는 없다. 아래는 구현할 내용과 코드가 준비되면 쓸 명령이다. 공통 측정 규칙과 결과 형식은 [작업 지침](../../AGENTS.md)에 적어 두었다.
+2026-10-22 현재 시작 전 준비를 진행하고 있다. 아직 `python/bench.py`나 측정 결과는 없다. 아래는 구현할 내용과 코드가 준비되면 쓸 명령이다. 공통 측정 규칙과 결과 형식은 [작업 지침](../../AGENTS.md)에 적어 두었다.
 
 ## 궁금한 것
 
@@ -10,6 +10,55 @@
 - GIL을 끄면 스레드 성능은 얼마나 달라질까?
 - 락 없는 카운터와 지연 초기화 싱글톤의 경쟁 상태를 재현할 수 있을까? 락은 어디에 걸어야 할까?
 - 이벤트 루프에서 블로킹 작업을 돌리면 다른 코루틴은 얼마나 늦게 응답할까?
+
+## 시작 전 기록
+
+### 첫 문제: 같은 스레드 수인데 효과가 다른 이유
+
+Python으로 소수를 계산하는 작업 A와 외부 서버의 응답을 받아 저장하는 작업 B를 순차 실행에서 스레드 4개로 바꿨다고 가정했다. A는 시간이 거의 줄지 않거나 늘고, B는 줄어드는 상황을 제시했다. 실제 측정 결과가 아니다.
+
+처음 제시할 때 GIL이 켜진 일반 CPython이라는 조건을 빠뜨렸다. 사용자가 free-threaded 빌드에서는 A도 빨라질 수 있다고 지적했다. 이 문제는 하나의 인터프리터에서 GIL을 켠 조건으로 보완하고, GIL을 끈 조건은 별도로 비교한다. 1번 실험의 전체 범위는 유지하며 질문별로 진행한다.
+
+### 사람의 최초 설명과 의문 (2026-10-22, 요약)
+
+아래는 피드백을 받기 전의 설명이며, 확인된 사실과 구분해 남긴다.
+
+- free-threading은 Python 3.14t부터 지원하는 것으로 알고 있었다. GIL이 없으면 A도 여러 스레드로 더 빨리 처리할 수 있다고 예상했다.
+- GIL이 있는 환경에서는 GIL을 가진 스레드만 CPU를 사용할 수 있고, 다른 스레드는 그 작업이 끝나기를 기다리므로 A가 순차 실행과 비슷하다고 설명했다.
+- B는 외부 리소스에 작업을 맡기고 기다리는 동안 GIL을 반납하므로 여러 스레드가 대기 시간을 겹칠 수 있다고 설명했다.
+- GIL을 어디에 반납하는지, 대기하던 스레드를 누가 다시 실행시키는지가 불분명했다. `threading`의 스레드와 asyncio 이벤트 루프의 관계도 확인하고 싶어 했다.
+
+### 에이전트 피드백
+
+- free-threaded 빌드는 3.13부터 도입됐다. 버전·빌드와 실제 GIL 활성 상태를 구분한다. GIL을 끄면 CPU 작업도 병렬 실행할 수 있지만, 속도 향상은 측정으로 확인한다. [free-threading 문서](https://docs.python.org/3.14/howto/free-threading-python.html)
+- GIL은 CPU 전체의 사용 권한이 아니다. GIL이 켜진 같은 인터프리터에서 Python 코드를 실행하는 스레드를 제한한다. 다른 작업의 완료 전에도 교대할 수 있고, GIL을 해제하는 네이티브 코드는 별도로 CPU 연산을 수행할 수 있다. [스레드와 GIL](https://docs.python.org/3.14/c-api/threads.html)
+- 블로킹 I/O를 감싼 CPython의 C 코드가 GIL을 해제한다. I/O 대기와 스레드 재개는 OS가 담당하며, Python 코드로 돌아오기 전에는 GIL을 다시 획득한다. 잠금 해제는 CPython이 공유하는 잠금 상태를 바꾸고 대기 중인 스레드에 신호를 보내는 동작이다. [소켓 구현](https://github.com/python/cpython/blob/3.14/Modules/socketmodule.c), [GIL 구현](https://github.com/python/cpython/blob/3.14/Python/ceval_gil.c)
+- `threading`은 OS 스레드를 만들고 관리하는 API이고, asyncio 이벤트 루프는 그 루프가 실행되는 스레드에서 Task와 콜백을 실행한다. 일반적인 `threading` 기반 I/O에 asyncio 이벤트 루프는 필요하지 않다. [threading](https://docs.python.org/3.14/library/threading.html), [asyncio](https://docs.python.org/3.14/library/asyncio-dev.html#concurrency-and-multithreading)
+
+### 이해 확인: I/O가 끝난 스레드의 재개
+
+- 사람의 답(요약): 스레드 A의 I/O가 끝나도 같은 인터프리터의 B가 GIL을 가지고 있으면 A는 해제를 기다려야 한다. 다른 인터프리터라면 바로 Python 코드를 실행할 수 있다고 답했다.
+- 에이전트 피드백: GIL이 켜진 환경에서 첫 설명은 맞다. 두 번째는 서로 독립적인 GIL을 쓰는 경우로 한정한다. 다른 인터프리터도 GIL을 공유할 수 있으며, 독립적인 GIL을 쓰더라도 실제 실행 시점은 OS 스케줄링에 달려 있다. [인터프리터의 GIL 설정](https://docs.python.org/3.14/c-api/subinterpreters.html#c.PyInterpreterConfig.gil)
+- 현재 확인한 부분: I/O 완료 뒤에도 공유 GIL의 재획득을 기다릴 수 있다는 점을 설명했다. 계산 중 스레드 교대와 이벤트 루프의 역할은 추가로 확인한다.
+
+### 보충 학습: Python 스레드·OS 스레드·하드웨어 스레드
+
+- 사람의 현재 이해(요약): Python에서는 작성자가 스레드 수를 정할 수 있지만 OS 스레드 수는 CPU 사양에 제한되므로, 둘은 다른 종류라고 생각했다. B가 I/O 없이 Python 계산을 계속하면 A는 B의 전체 계산이 끝나야 GIL을 얻는다고 답했다.
+- 에이전트 피드백: CPython의 `threading.Thread`로 시작한 스레드는 OS 스레드에 1:1로 대응한다. POSIX 구현은 `pthread_create()`를 호출한다. CPU 사양의 하드웨어 스레드(논리 CPU)는 실행 자원이며, OS 스레드는 그 자원에 스케줄링되는 실행 단위다. 자원이 허용하면 논리 CPU 수보다 많은 OS 스레드를 만들 수 있다. [CPython 스레드 구현](https://github.com/python/cpython/blob/3.14/Python/thread_pthread.h), [OS의 스레드 스케줄링](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/AboutThreads/AboutThreads.html)
+- 에이전트 피드백: 순수 Python 계산 중에도 CPython이 GIL 교대 요청을 처리하므로 다른 스레드가 작업 완료 전에 실행할 수 있다. OS가 실행 중인 스레드를 중단하는 것과 GIL을 해제하는 것은 별개다. 교대 간격은 엄밀한 시간 보장이 아니며, GIL을 유지하는 긴 네이티브 호출은 교대를 지연시킬 수 있다. [교대 간격](https://docs.python.org/3.14/library/sys.html#sys.setswitchinterval), [GIL 구현](https://github.com/python/cpython/blob/3.14/Python/ceval_gil.c)
+- 사람의 재설명(요약): 스레드 10개를 두는 것은 가능하지만 논리 CPU가 4개이므로 10개 작업을 동시에 병렬 실행할 수는 없다고 답했다. OS가 여러 스레드를 동시에 실행되는 것처럼 스케줄링할 수 있다고 예상했지만, 그 근거는 모르겠다고 밝혔다.
+- 추가 피드백: 자원이 허용하면 작업자 스레드 10개를 실제로 생성해 시작할 수 있다. 논리 CPU 4개는 OS 스레드의 동시 실행 한도이고, GIL이 켜진 같은 인터프리터에서 순수 Python 계산을 동시에 실행하는 작업자는 최대 1개다. OS는 스레드의 실행 문맥을 저장·복원해 중단한 지점부터 이어서 실행한다. 이것을 문맥 교환이라고 한다. [OS의 문맥 교환](https://learn.microsoft.com/en-us/windows/win32/procthread/multitasking), [GIL의 실행 제한](https://docs.python.org/3.14/library/threading.html#gil-and-performance-considerations)
+- 사람의 추가 답(요약): GIL을 실제로 끄면 같은 인터프리터에서도 여러 스레드가 Python 코드를 동시에 실행할 수 있고, 논리 CPU가 4개이므로 작업자 10개의 동시 실행 상한은 4개라고 답했다. 설명 중에는 이를 "물리적인 CPU의 개수"라고도 표현했다.
+- 추가 피드백: 상한 4개라는 판단은 맞다. 다만 이 조건에서 주어진 것은 논리 CPU 4개이며, 반드시 물리 코어 4개라는 뜻은 아니다. [하드웨어 스레드와 논리 프로세서](https://www.intel.com/content/dam/doc/manual/64-ia-32-architectures-optimization-manual.pdf)
+- 현재 확인한 부분: 스레드 생성 수와 하드웨어의 병렬 실행 한도를 구분했고, GIL을 끈 뒤의 동시 실행 상한을 이유와 함께 설명했다. 문맥 교환과 계산 중 GIL 교대는 설명을 보충했으며, 사람의 재설명은 아직 확인하지 않았다.
+
+### CPU 작업의 예상: 스레드 4개와 프로세스 4개
+
+- 문답의 조건: 논리 CPU 4개, GIL이 켜진 일반 CPython, 서로 독립적인 소수 계산 작업을 가정했다. 실제 측정 환경을 확인한 결과는 아니다.
+- 사람의 예상과 이유(요약): 프로세스 4개가 더 빨리 끝날 것으로 예상했다. 한 프로세스의 스레드 4개는 GIL을 공유하므로 한 번에 하나가 Python 계산을 실행하지만, 프로세스 4개는 각각의 GIL로 CPU 작업을 병렬 실행할 수 있다고 설명했다.
+- 에이전트 피드백: 이번처럼 각 프로세스에 일반 인터프리터 하나를 두는 조건에서 병렬 실행에 대한 설명은 맞다. 처리 시간이 실제로 더 짧은지는 아직 측정하지 않았다. 현재 설계는 풀 생성·종료 시간까지 포함하므로, 작업 크기에 따라 예상이 달라질 수 있는지도 확인한다.
+- 사람의 추가 예상(요약): 프로세스 생성·결과 전달·종료 비용이 크면 프로세스 4개가 항상 더 빠르지는 않을 것이라고 답했다. "GIL은 프로세스마다 하나씩만 가질 수 있다"는 전제도 실험으로 확인하자고 제안했다.
+- 추가 피드백: 부대비용을 고려한 방향은 맞다. 비교할 기준은 부대비용과 병렬 계산시간 자체의 크기가 아니라, 프로세스로 바꾸면서 늘어난 비용과 병렬 계산으로 절약한 시간이다. 실제 판단은 같은 작업을 처리한 전체 경과 시간으로 한다. 풀은 작업들을 처리하고 결과를 받은 뒤 종료한다.
 
 ## 작업 규칙
 
