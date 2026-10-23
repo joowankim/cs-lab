@@ -1,0 +1,69 @@
+{
+  "started_at": "2026-10-23T07:43:49.332399+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "smoke",
+  "command": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpfd0moa/environments-v2/bench-57cf48ecc66ac8b1/bin/python python/bench.py --smoke --workers 8 --compare-workers 4",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpfd0moa/environments-v2/bench-57cf48ecc66ac8b1/bin/python",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "models": [
+      "sequential",
+      "threads",
+      "processes"
+    ],
+    "workers": 8,
+    "compare_workers": [
+      4
+    ],
+    "sizes": [
+      100
+    ],
+    "tasks": 8,
+    "repeats": 1,
+    "expect_gil": "on",
+    "seed": 0,
+    "output_dir": null,
+    "smoke": true
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "84680f5a35fe026acf3d9b24c69e1f67e456d427",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n?? python/\n?? results/2026-10-23T070246879341-benchmark-cpu-observation.txt\n?? results/2026-10-23T070246879341-benchmark-env.txt\n?? results/2026-10-23T070246879341-benchmark-python-3.14.2-gil-on.jsonl\n?? results/validation/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "bench.py": "c95da3976471c0d52e254d2e7a6b6aec4857cf3caa42062128be31f7dcf5490c",
+    "models.py": "deacb9df1243d8c225a699d70738e4494622b13a9a56dddad957ffd4bd8b130d",
+    "workloads.py": "539684305daf092f82ed5b262247da9436ab3bb7e2804396f626e9a18a7dc341"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  }
+}

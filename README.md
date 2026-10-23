@@ -6,7 +6,7 @@
 
 설명이 어디까지 맞는지도 궁금하다. GIL이 공유 상태를 어디까지 보호하는지, TCP 연결을 닫는 쪽과 TIME_WAIT은 어떤 관계인지, DB 엔진마다 인덱스 구조가 어떻게 다른지 실험해 보려 한다. 결과는 공식 문서와 대조한다. 내 환경에서 관찰한 동작이 언제나 보장되는 것은 아니기 때문이다.
 
-2026-10-22 기준으로 [첫 실험인 동시성 모델 비교](experiments/01-concurrency-models/README.md)를 설계하고 있다. 아직 코드나 측정 결과는 없다.
+2026-10-23 기준으로 [첫 실험인 동시성 모델 비교](experiments/01-concurrency-models/README.md)를 진행하고 있다. GIL을 켠 Python에서 CPU 작업의 첫 측정과 해석을 기록했다. 시작 전 준비를 이어간다.
 
 ## 목표
 
@@ -27,7 +27,7 @@
 
 | # | 실험 | 상태 |
 |---|---|---|
-| 1 | [동시성 모델 비교: 스레드·프로세스·asyncio, GIL 있음/없음](experiments/01-concurrency-models/README.md) | 설계 중 (2026-10-22) |
+| 1 | [동시성 모델 비교: 스레드·프로세스·asyncio, GIL 있음/없음](experiments/01-concurrency-models/README.md) | 진행 중 (2026-10-23) |
 | 2 | 동기화 도구 직접 쓰기 | 예정 |
 | 3 | MySQL 격리 수준과 MVCC | 예정 |
 | 4 | MySQL 락·데드락·커넥션 풀 | 예정 |
