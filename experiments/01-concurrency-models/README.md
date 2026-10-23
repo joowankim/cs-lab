@@ -8,7 +8,7 @@
 
 - 계산이 많은 작업과 대기가 많은 작업에서 스레드·프로세스·asyncio는 순차 실행보다 얼마나 빠르거나 느릴까?
 - GIL을 끄면 스레드 성능은 얼마나 달라질까?
-- 한 프로세스에는 GIL이 하나만 있을 수 있을까? 같은 프로세스에 여러 인터프리터를 두면 어떻게 달라질까?
+- 한 Python 인터프리터마다 GIL이 하나만 존재하는가? 실제 구현에서 인터프리터·스레드·GIL은 어떻게 연결되는가?
 - 락 없는 카운터와 지연 초기화 싱글톤의 경쟁 상태를 재현할 수 있을까? 락은 어디에 걸어야 할까?
 - 이벤트 루프에서 블로킹 작업을 돌리면 다른 코루틴은 얼마나 늦게 응답할까?
 
@@ -160,23 +160,24 @@ PYTHON_GIL=1 uv run --python 3.14t python/bench.py > "results/${experiment_stamp
 
 Free-threaded 빌드도 GIL을 켜고 실행할 수 있다. 빌드 이름만 보고 GIL이 꺼졌다고 생각하면 안 된다. 설정과 확인 방법은 [Python 문서](https://docs.python.org/3.14/howto/free-threading-python.html#the-global-interpreter-lock-in-free-threaded-python)에 나와 있다.
 
-## 추가 비교: 한 프로세스에 여러 GIL이 있을 수 있는가
+## 소스 조사: 한 인터프리터마다 GIL이 하나만 존재하는가
 
-사용자가 제안한 전제를 확인하기 위한 설계다. 기본 성능 비교 뒤에 별도로 진행하며, 아직 구현하거나 측정하지 않았다. GIL이 켜진 일반 CPython 3.14에서 같은 소수 계산 작업 8개를 아래 구성으로 실행한다.
+사람은 원래 의도가 "한 Python 인터프리터마다 한 개의 GIL만 존재한다"는 문장을 확인하는 것이었다고 정정하고, 실제 코드 조사를 요청했다. 기존의 여러 인터프리터 성능 비교 계획을 이 조사로 대체한다. 아래는 실험 런타임과 버전을 맞춘 상류 CPython `v3.14.2` 소스에서 확인한 내용이다.
 
-| `model` | 작업자 구성 | 실행 방법 |
+정확히 정리하면 **GIL이 활성화된 CPython에서는, 같은 인터프리터에 속한 스레드들이 그 인터프리터에 연결된 GIL 하나를 공유한다.** 인터프리터마다 반드시 서로 다른 GIL을 하나씩 소유한다는 뜻은 아니다.
+
+| 확인할 내용 | 소스 근거 | 확인 결과 |
 |---|---|---|
-| `threads` | 한 프로세스·한 인터프리터의 스레드 4개 | `ThreadPoolExecutor(max_workers=4)` |
-| `interpreters` | 한 프로세스 안에서 작업자마다 별도 인터프리터를 쓰는 스레드 4개 | `InterpreterPoolExecutor(max_workers=4)` |
-| `processes` | 별도 프로세스 4개, 각각 기본 인터프리터 사용 | `ProcessPoolExecutor(max_workers=4)`, `spawn` |
+| 스레드와 인터프리터의 연결 | [pystate.h:66–74](https://github.com/python/cpython/blob/v3.14.2/Include/cpython/pystate.h#L66-L74) | 스레드 상태는 `interp`로 현재 인터프리터를 가리킨다. |
+| 인터프리터의 GIL 참조 | [pycore_interp_structs.h:104–113](https://github.com/python/cpython/blob/v3.14.2/Include/internal/pycore_interp_structs.h#L104-L113), [764–769](https://github.com/python/cpython/blob/v3.14.2/Include/internal/pycore_interp_structs.h#L764-L769) | 인터프리터의 `ceval` 안에 GIL을 가리키는 포인터가 하나 있다. |
+| 자체 GIL의 저장 공간 | [pycore_interp_structs.h:844–845](https://github.com/python/cpython/blob/v3.14.2/Include/internal/pycore_interp_structs.h#L844-L845) | 자체 GIL 상태를 담는 `_gil`이 있으며, 사용하지 않을 수도 있다고 명시한다. |
+| 스레드의 잠금 획득 경로 | [ceval_gil.c:310–324](https://github.com/python/cpython/blob/v3.14.2/Python/ceval_gil.c#L310-L324) | `take_gil()`은 스레드 상태의 인터프리터를 거쳐 그 GIL 참조를 사용한다. 같은 인터프리터의 스레드마다 새 GIL을 만들지 않는다. |
+| 자체 GIL과 공유 GIL의 선택 | [pylifecycle.c:583–596](https://github.com/python/cpython/blob/v3.14.2/Python/pylifecycle.c#L583-L596), [ceval_gil.c:476–516](https://github.com/python/cpython/blob/v3.14.2/Python/ceval_gil.c#L476-L516) | 자체 GIL이면 그 인터프리터의 저장 공간을 연결하고, 공유 설정이면 메인 인터프리터의 GIL을 연결한다. |
+| Free-threaded 실행 | [ceval_gil.c:312–316](https://github.com/python/cpython/blob/v3.14.2/Python/ceval_gil.c#L312-L316), [488–490](https://github.com/python/cpython/blob/v3.14.2/Python/ceval_gil.c#L488-L490) | 활성 값이 0이면 획득 절차에서 바로 반환한다. 자료구조의 존재와 GIL의 활성 여부는 다르다. |
 
-표는 작업자 기준이며 실행을 관리하는 메인 스레드·인터프리터는 별도다. Python 3.14의 `InterpreterPoolExecutor`는 각 작업자 인터프리터가 독립적인 GIL을 쓰도록 구성한다. 이 문서상의 동작과 실제 실행을 대조한다. [공식 문서](https://docs.python.org/3.14/library/concurrent.futures.html#interpreterpoolexecutor)
+즉, 한 인터프리터가 사용하는 GIL 참조는 하나지만 여러 인터프리터의 참조가 같은 GIL을 가리킬 수 있다. 공개 C API도 자체 GIL과 메인 인터프리터의 GIL 공유를 선택하게 한다. [공식 설정 문서](https://docs.python.org/3.14/c-api/subinterpreters.html#c.PyInterpreterConfig.gil)
 
-- 작업 함수는 import 가능한 모듈에 둔다. 구현 후 실행 명령을 추가하고, 기존 비교와 같은 검증값·반복 규칙·측정 구간을 적용한다.
-- 각 작업은 계산 결과와 함께 `os.getpid()`, `threading.get_native_id()`, `concurrent.interpreters.get_current().id`, `sys._is_gil_enabled()`를 반환한다. 이를 결과의 `task_results`에 모아, 실제 참여한 프로세스·스레드·인터프리터 수와 GIL 활성 상태를 확인한다. 인터프리터 ID는 PID와 함께 식별한다. [인터프리터 식별 API](https://docs.python.org/3.14/library/concurrent.interpreters.html)
-- `interpreters` 조건에서는 모든 작업자의 PID가 부모와 같은지, 서로 다른 작업자 인터프리터가 실제로 참여했는지, 각각 GIL이 켜져 있는지 확인한다. 설정한 작업자 수와 실제 참여한 수를 구분한다.
-- 각 작업의 계산 구간에서 `time.thread_time()`으로 잰 CPU 시간도 `thread_cpu_s`로 반환한다. CPU 시간 합계와 전체 경과 시간, 프로세스 CPU 사용률을 비교해 여러 코어를 사용했는지 살펴본다.
-- PID·인터프리터 ID·GIL 활성 여부만으로 독립된 GIL의 개수를 직접 센 것은 아니다. 선택한 실행 방식의 GIL 구성, 실제 작업자 정보, CPU 사용과 실행 시간을 함께 근거로 쓴다. 속도 향상이 보이지 않았다고 GIL이 하나라고 결론 내리지 않는다.
+이 결론은 자료구조·초기화·획득 경로를 읽어 확인한 것이다. 실행 시간으로 GIL 개수를 추정한 결과나 사람이 해설 없이 설명한 답으로 기록하지 않는다. 추가 본 측정은 하지 않았다.
 
 ## 경쟁 상태와 이벤트 루프 블로킹
 
