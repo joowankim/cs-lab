@@ -223,6 +223,9 @@ CPU와 I/O 작업을 순차·스레드·프로세스·asyncio로 실행할 수 �
 | [counter_kernels.py](python/counter_kernels.py) | 락 없는 카운터 증가와 진행 단계에서 직접 수정할 함수 |
 | [counter_lab.py](python/counter_lab.py) | 카운터의 반복 실행, 기대값 불일치·실행 오류 구분, 환경·원자료 저장 |
 | [test_counter_lab.py](python/test_counter_lab.py) | 기준 락 함수, 갱신 유실, 실행 오류와 집계 검증 |
+| [singleton_kernels.py](python/singleton_kernels.py) | 락 없는 지연 초기화와 진행 단계에서 직접 수정할 함수 |
+| [singleton_lab.py](python/singleton_lab.py) | 생성 횟수·객체 동일성 검증, 반복 실행과 환경·원자료 저장 |
+| [test_singleton_lab.py](python/test_singleton_lab.py) | 중복 생성, 잘못된 반환값, 실행 오류와 집계 검증 |
 
 ### 작은 입력으로 동작 확인
 
@@ -385,7 +388,7 @@ uv run --python 3.14.2t python/compare_gil.py --task io --models sequential thre
 
 ## 경쟁 상태와 이벤트 루프 블로킹
 
-다음 사례는 성능 비교와 따로 돌린다. 공유 카운터의 실행 틀을 작은 입력으로 검증했다.
+다음 사례는 성능 비교와 따로 돌린다. 공유 카운터와 싱글톤의 실행 틀을 작은 입력으로 검증했다.
 
 | 시나리오 | 비교와 확인 방법 |
 |---|---|
@@ -454,6 +457,65 @@ uv run --python 3.14.2+gil python/counter_lab.py --cases unlocked candidate
 | `worker_results` | 스레드별 OS ID·이름·실제 GIL 상태·완료 호출 수·예외 |
 
 `valid: true`인데 `correct: false`이면 기대값 불일치가 관찰된 것이다. `valid: false`인 실행 오류는 불일치 횟수에 섞지 않고 원인부터 해결한다. 기본 함수가 모든 시도에서 정상값을 내더라도 경쟁 상태가 없다고 결론 내리지 않는다. 수정 대상은 기대값이 모두 맞는지와 실제 락의 공유·적용 범위를 함께 확인한다. 수정 대상에서 불일치가 나오면 원자료를 보존하고 종료 코드 1로 알린다.
+
+### 지연 초기화 싱글톤의 문제 상황과 원인 예상
+
+- 문제 상황: GIL이 켜진 같은 인터프리터에서 스레드 2개가 처음 공유 객체를 요청한다. 초기 `instance`는 `None`이며, `None`이면 객체를 생성해 저장하고 반환한다. 생성 함수는 `time.sleep(0)`으로 대기할 수 있다. 목표는 객체가 한 번만 생성되는 것이다. 아래 예상은 실행 결과를 보기 전의 답이다.
+- 사람의 예상과 이유(요약): 객체가 두 개 생성될 수 있다고 답했다. 앞선 카운터 문제처럼 두 스레드가 모두 `None`인 상태에 접근할 수 있기 때문이라고 설명했다.
+- 에이전트 피드백: 객체가 공유 변수에 저장되기 전에 두 스레드가 모두 `None`이라고 판단하고 각자 생성 함수를 호출할 수 있다는 설명으로 구체화한다. 확인과 생성·저장 사이의 실행 교대가 문제다.
+- 락 위치에 대한 사람의 답: `None` 확인이 한 번뿐인 코드에서 검사 전에 락을 잡아야 한다고 답했다.
+- 에이전트 피드백: 모든 요청 스레드가 같은 락을 사용하고, 검사부터 생성·저장까지 보호한다. 그러면 다음 스레드는 앞선 스레드가 저장한 객체를 확인할 수 있다. 생성 직전에만 락을 잡으면 이미 통과한 `None` 검사의 판단이 남는다. 이 조건의 락 시작 위치를 답한 것으로 기록하며, 실제 수정과 최종 설명은 진행·정리 단계에서 확인한다. [Lock 문서](https://docs.python.org/3.14/library/threading.html#lock-objects)
+
+### 지연 초기화 싱글톤의 준비 조건과 실행법
+
+기본 조건은 스레드 2개가 각각 한 번 객체를 요청하는 시도 100회다. 각 시도마다 `instance = None`과 공유 락 하나를 새로 만든다. 시작 장벽은 함수 호출 전에 작업자들의 준비를 맞추며, 두 스레드가 모두 `None`을 읽도록 강제하지 않는다. 생성 함수 안의 `time.sleep(0)`은 실행 교대가 일어나기 쉽게 넣은 조건이다. 이 조건의 재현 빈도를 실제 서비스의 발생 확률로 해석하지 않는다.
+
+사람은 진행 단계에서 `singleton_kernels.py`의 `get_candidate()`에 공유 락을 적용한다. 현재는 락 없는 `get_unlocked()`를 호출하는 기본 동작이다. 에이전트는 반복 실행·검증·환경·결과 저장을 맡는다.
+
+에이전트가 제안한 판정 기준은 생성 횟수가 1이고 모든 호출이 공유 변수에 저장된 그 객체를 반환하는 것이다. 두 개를 생성했어도 마지막에 저장된 객체를 모두 반환할 수 있으므로 두 조건을 함께 검사한다. 생성·반환 객체의 참조를 판정 끝까지 유지하며, 객체 ID는 같은 시도 안에서만 비교한다. 생성 기록용 별도 락은 기록 목록만 보호하며 `None` 검사나 공유 변수 저장을 보호하지 않는다. [객체 ID 문서](https://docs.python.org/3.14/library/functions.html#id)
+
+작은 입력의 실행 틀 검증은 다음 명령으로 한다.
+
+```sh
+uv run --python 3.14.2+gil python/singleton_lab.py --smoke
+env PYTHON_GIL=0 uv run --python 3.14.2t python/singleton_lab.py --smoke --expect-gil off
+```
+
+`--smoke`는 스레드 2개·각 1회 요청·검증 3회로 고정하고 워밍업 `run: 0`도 저장한다. 2026-10-23에는 기본 함수인 `unlocked`만 아래 두 조건에서 검증했다. 각 파일의 4개 기록에서 요청 완료·객체 판정·스레드·GIL 상태·환경·소스 해시를 확인했다. 본 실행의 재현 빈도나 수정 완료를 판단하는 결과는 아니다.
+
+| 작은 입력 검증 | 환경 | 원자료 |
+|---|---|---|
+| 일반 3.14.2, GIL 켜짐 | [환경](results/validation/2026-10-23T132249104268-singleton-smoke-env.txt) | [JSONL](results/validation/2026-10-23T132249104268-singleton-smoke-python-3.14.2.jsonl) |
+| 3.14.2t, GIL 꺼짐 | [환경](results/validation/2026-10-23T132256145844-singleton-smoke-env.txt) | [JSONL](results/validation/2026-10-23T132256145844-singleton-smoke-python-3.14.2t.jsonl) |
+
+싱글톤 준비 시점의 전체 자동 검사 21개가 통과했고, 새 싱글톤 검사 5개는 GIL을 끈 빌드에서도 통과했다. 두 번 생성하고도 같은 객체를 반환하는 경우, 한 번 생성하고 다른 객체를 반환하는 경우를 별도 검사로 확인했다. 테스트 안의 락 기준 함수는 실행 틀 검증용이며, 사람이 수정할 `candidate`를 대신 구현한 것은 아니다.
+
+수정 대상과 비교하는 아래 명령은 진행 단계에서 코드를 고친 뒤 실행한다. `candidate` 비교와 본 실행 100회는 아직 하지 않았다.
+
+```sh
+uv run --python 3.14.2+gil python/singleton_lab.py --smoke --cases unlocked candidate
+uv run --python 3.14.2+gil python/singleton_lab.py --cases unlocked candidate
+```
+
+두 함수를 비교하면 조건마다 워밍업 1회와 본 실행 100회, 총 202개 기록이 된다. 반복마다 함수의 실행 순서를 뒤집고 집계에서는 워밍업을 제외한다. `--workers`, `--trials`로 조건을 바꿀 수 있고 `--no-yield-in-factory`는 인위적인 sleep을 제거한다. 조건 변경 전에는 결과를 다시 예상한다.
+
+### 싱글톤 결과의 판정과 보존
+
+한 시도를 JSON 한 줄에 저장하며 `purpose: "race"`, `scenario: "singleton"`으로 구분한다. `size`는 전체 요청 수이고 `params.requests_per_worker`는 1이다. `params`에는 생성 중 대기·시작 장벽·생성 기록용 락의 사용 여부도 남긴다. 작은 입력 검증은 `validation: true`와 함께 `results/validation/`에 저장한다. 성능 비교에 섞지 않으며 `wall_s`는 기록하지 않는다.
+
+| 필드 | 의미 |
+|---|---|
+| `check.created_count` | 생성 함수가 만들어 기록한 객체 수. 기대값은 1 |
+| `check.returned_unique` | 완료한 호출들이 반환한 서로 다른 객체 수. 기대값은 1 |
+| `check.all_returned_published` | 모든 요청이 끝났고, 반환값이 모두 최종 저장 객체와 동일하며 `None`이 아닌지 |
+| `check.published_was_created` | 최종 저장 객체가 생성 함수에서 만든 객체인지 |
+| `expected_check` | 생성 수·반환 객체 수·동일성의 기대값 |
+| `created_ids`, `published_id` | 생성된 객체들의 ID와 최종 저장 객체 ID |
+| `finished_calls`, `valid` | 예외 없이 완료한 요청 수와 모든 요청이 완료됐는지 |
+| `correct` | 실행이 유효하고 `check` 전체가 기대값과 같은지 |
+| `worker_results` | 스레드별 OS ID·이름·GIL 상태·반환 객체 ID·완료 호출 수·예외 |
+
+`valid: true`인데 `correct: false`이면 생성·반환 조건의 불일치다. 실행 오류는 따로 집계하고 원인을 확인한다. 수정 대상에서 불일치가 나오면 기록을 보존한 뒤 종료 코드 1로 알린다. 반복 실행에서 모두 정상이어도 경쟁 상태가 없다는 증명으로 삼지 않으며, 실제 락의 공유·적용 범위를 함께 검토한다.
 
 ## 결과 정리
 
