@@ -1,0 +1,71 @@
+{
+  "started_at": "2026-10-23T12:49:01.741997+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "race",
+  "command": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpTc2VJd/environments-v2/counter-lab-24af8cea0a9d4372/bin/python python/counter_lab.py --smoke",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpTc2VJd/environments-v2/counter-lab-24af8cea0a9d4372/bin/python",
+  "resolved_executable": "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+  "base_prefix": "/opt/homebrew/opt/python@3.14/Frameworks/Python.framework/Versions/3.14",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "gil_configuration": {
+    "PYTHON_GIL": null,
+    "xoption_gil": null
+  },
+  "config": {
+    "cases": [
+      "unlocked"
+    ],
+    "workers": 2,
+    "increments": 1,
+    "trials": 3,
+    "yield_between": true,
+    "expect_gil": "on",
+    "output_dir": null,
+    "smoke": true
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "84680f5a35fe026acf3d9b24c69e1f67e456d427",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n?? python/\n?? results/2026-10-23T070246879341-benchmark-cpu-observation.txt\n?? results/2026-10-23T070246879341-benchmark-env.txt\n?? results/2026-10-23T070246879341-benchmark-python-3.14.2-gil-on.jsonl\n?? results/validation/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "counter_lab.py": "2c24d906647611f0fb2fc35d27f9c58e7d41a274998edfbc30b60784b65f0a3c",
+    "counter_kernels.py": "2c1381891c45fb0bc25a439312b942918f9d1cd275d37452adb835f07bf3efad",
+    "bench.py": "dbeb6fb915e6bb70eb6dca480fe016a8118b79626bc1cc95e1e25466a0fa79d3",
+    "models.py": "e0615ba9bb2efd7333d375d20548026a41c5356c65a0c604beaccc896babdd16",
+    "workloads.py": "73b03fa986b2cc7ab6abe873682c77e53bfa0a7e87817425dfc7166bae20ef74"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "scenario": "counter",
+  "validation": true
+}

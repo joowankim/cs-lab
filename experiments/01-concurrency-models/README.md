@@ -220,6 +220,9 @@ CPU와 I/O 작업을 순차·스레드·프로세스·asyncio로 실행할 수 �
 | [test_compare_gil.py](python/test_compare_gil.py) | 런타임·GIL 조건별 집계가 섞이지 않는지 검사 |
 | [trace_execution.py](python/trace_execution.py) | 작업 시작·종료 시점의 프로세스·스레드·Task 식별과 대응표 저장 |
 | [test_trace_execution.py](python/test_trace_execution.py) | 실행 위치, asyncio 대기 전후 식별자, 동시 실행 상한과 오류 기록 검사 |
+| [counter_kernels.py](python/counter_kernels.py) | 락 없는 카운터 증가와 진행 단계에서 직접 수정할 함수 |
+| [counter_lab.py](python/counter_lab.py) | 카운터의 반복 실행, 기대값 불일치·실행 오류 구분, 환경·원자료 저장 |
+| [test_counter_lab.py](python/test_counter_lab.py) | 기준 락 함수, 갱신 유실, 실행 오류와 집계 검증 |
 
 ### 작은 입력으로 동작 확인
 
@@ -382,7 +385,7 @@ uv run --python 3.14.2t python/compare_gil.py --task io --models sequential thre
 
 ## 경쟁 상태와 이벤트 루프 블로킹
 
-다음 사례는 성능 비교와 따로 돌린다. 실행 틀은 준비 중이다.
+다음 사례는 성능 비교와 따로 돌린다. 공유 카운터의 실행 틀을 작은 입력으로 검증했다.
 
 | 시나리오 | 비교와 확인 방법 |
 |---|---|
@@ -391,6 +394,66 @@ uv run --python 3.14.2t python/compare_gil.py --task io --models sequential thre
 | 이벤트 루프 블로킹 | 주기적으로 깨어나는 코루틴과 블로킹 작업을 함께 실행하고, 예정 시각 대비 지연을 기록. `time.sleep`과 `await asyncio.sleep`을 비교하고 CPU 계산도 별도로 확인 |
 
 재현하려고 읽기와 쓰기 사이에 대기나 동기화 지점을 넣었다면 무엇을 넣었는지 적는다. 수정한 뒤에는 같은 조건에서 기대값과 객체 동일성을 다시 확인한다.
+
+### 공유 카운터의 문제 상황과 원인 예상
+
+- 문제 상황: GIL이 켜진 같은 인터프리터에서 스레드 2개가 완료 건수를 한 번씩 늘린다. 초기 `completed`는 0이며 원하는 최종값은 2다. `previous = completed`와 `completed = previous + 1` 사이에 의도적으로 `time.sleep(0)`을 넣은 예제를 제시하고, 최종값이 1이 될 수 있는 실행 순서를 물었다. 실제 재현 결과가 아닌 준비 문답이다.
+- 사람의 설명(요약): A가 실행되고 sleep을 호출하기 전에 B가 실행되면, 두 스레드가 모두 `completed`의 0을 각자의 지역변수 `previous`에 저장하므로 최종값이 1이 될 것이라고 설명했다.
+- 에이전트 피드백: 두 스레드가 모두 0을 읽고 각각 1을 쓴다는 원인 설명은 맞다. B가 A의 sleep 호출 전에 실행되어야 하는 것은 아니다. A가 0을 읽고 sleep에서 GIL을 해제한 뒤, B도 0을 읽고 sleep에 들어가고, 이후 A와 B가 차례로 1을 쓰는 순서로도 발생한다. Python 코드를 동시에 실행하지 않아도 읽기·수정·쓰기 사이에 실행이 끼어들면 갱신이 유실될 수 있다.
+- 락 범위에 대한 사람의 답(요약): `completed`를 최신화하는 코드까지 보호해야 하며, 그래야 오류가 있는 데이터를 읽지 않을 것이라고 설명했다.
+- 에이전트 피드백: 쓰기를 마칠 때까지 보호한다는 끝점은 맞다. 읽은 0 자체는 그 시점의 정상값이다. 다른 스레드의 갱신이 끼어든 뒤에도 이전에 읽은 값으로 쓰는 것이 문제이며, 쓰기만 순서대로 실행해도 두 스레드가 이미 0을 읽었다면 갱신 유실이 남는다.
+- 힌트 후 사람의 답(요약): `previous = completed`를 실행하기 전에 락을 잡아야 한다고 답했다. 같은 리소스에 두 스레드가 동시에 접근하는 것을 방지해야 하기 때문이라고 설명했다.
+- 에이전트 피드백: 보호 범위는 읽기 직전부터 쓰기 직후까지이며, 이 예제의 `sleep(0)`도 그 사이에 포함된다. 여기서 겹치지 않게 하는 것은 읽기·수정·쓰기 전체 구간이다. GIL이 켜져 있어 Python 명령을 동시에 실행하지 않더라도 이 구간 사이에 다른 스레드의 작업이 끼어들 수 있다. 힌트를 받은 뒤 보호 범위의 시작과 끝을 답한 것으로 기록한다.
+- 반복 실행에 대한 사람의 예상과 이유(요약): 최종값이 2가 나오는 경우도 있다고 답했다. 한 스레드의 갱신이 끝난 뒤 다른 스레드가 그 값을 읽는 순서로 실행될 수 있기 때문이라고 설명했다.
+- 에이전트 피드백: 최종값은 실행 순서에 따라 달라질 수 있다. 정상값이 나온 시도가 있다는 사실이나 몇 번 오류가 재현되지 않았다는 사실만으로 경쟁 상태가 없다고 판단하지 않는다.
+
+### 공유 카운터의 준비 조건과 실행법
+
+기본 조건은 스레드 2개가 각각 한 번 증가시키는 시도 100회다. 각 시도마다 공유 카운터를 0으로 초기화하고 모든 작업자가 같은 락 하나를 받는다. 기대값은 2다. 읽기와 쓰기 사이의 `time.sleep(0)`은 재현을 돕기 위해 넣은 조건으로 기록한다. 시작 장벽은 읽기·쓰기와 락 바깥에서 작업자들이 준비됐는지 맞출 뿐, 같은 값을 읽게 강제하지 않는다.
+
+사람은 진행 단계에서 `counter_kernels.py`의 `increment_candidate()`에 공유 락을 적용한다. 현재 이 함수는 락 없는 기본 함수를 그대로 호출한다. `candidate`라는 이름만으로 락이 적용됐다고 판단하지 않는다. 에이전트는 반복 실행·검증·환경·결과 저장을 맡는다.
+
+작은 입력의 실행 틀 검증은 다음 명령으로 한다. 현재는 기본 함수인 `unlocked`만 검증했다.
+
+```sh
+uv run --python 3.14.2+gil python/counter_lab.py --smoke
+env PYTHON_GIL=0 uv run --python 3.14.2t python/counter_lab.py --smoke --expect-gil off
+```
+
+`--smoke`는 스레드 2개·각 1회 증가·검증 3회로 고정하고 워밍업 `run: 0`도 저장한다. 전체 자동 검사 16개가 통과했고, 새 카운터 검사 4개는 GIL을 끈 빌드에서도 통과했다. 실행 틀의 락 검사는 테스트 안의 별도 기준 함수를 사용했으며, 사람이 수정할 `candidate`를 대신 구현하거나 검증한 것은 아니다.
+
+| 작은 입력 검증 | 환경 | 원자료 |
+|---|---|---|
+| 일반 3.14.2, GIL 켜짐 | [환경](results/validation/2026-10-23T124901741997-counter-smoke-env.txt) | [JSONL](results/validation/2026-10-23T124901741997-counter-smoke-python-3.14.2.jsonl) |
+| 3.14.2t, GIL 꺼짐 | [환경](results/validation/2026-10-23T124903889502-counter-smoke-env.txt) | [JSONL](results/validation/2026-10-23T124903889502-counter-smoke-python-3.14.2t.jsonl) |
+
+각 파일의 4개 기록에서 요청한 증가 함수 호출이 모두 끝났고, 결과 판정·실제 GIL 상태·참여 스레드·환경·소스 해시를 확인했다. 기대값 불일치는 실행 틀의 오류와 구분한다. 이 검증으로 본 실행의 재현 빈도나 수정 완료를 판단하지 않는다.
+
+수정한 뒤에는 다음 순서로 같은 조건의 기본 함수와 수정 대상을 비교한다. 아래 `candidate` 포함 명령과 본 실행 100회는 아직 수행하지 않았다.
+
+```sh
+uv run --python 3.14.2+gil python/counter_lab.py --smoke --cases unlocked candidate
+uv run --python 3.14.2+gil python/counter_lab.py --cases unlocked candidate
+```
+
+조건마다 워밍업 1회와 본 실행 100회를 저장하므로 두 함수를 비교하면 총 202개 기록이 된다. 반복마다 함수의 실행 순서를 뒤집고 집계에서는 워밍업을 제외한다. `--workers`, `--increments`, `--trials`로 입력을 바꿀 수 있고, `--no-yield-between`은 인위적인 sleep을 제거한다. 조건을 바꿀 때는 결과 예상도 다시 남긴다.
+
+### 카운터 결과의 판정과 보존
+
+한 시도의 결과를 JSON 한 줄로 저장하며 `purpose: "race"`, `scenario: "counter"`로 구분한다. 작은 입력 검증에는 `validation: true`를 표시한다. 성능 비교에 섞지 않으며 `wall_s`를 기록하지 않는다. 원자료와 환경은 같은 시각 접두사의 새 파일에 저장하고, 검증 파일은 `results/validation/`에 둔다.
+
+| 필드 | 의미 |
+|---|---|
+| `case`, `variant` | 실행한 증가 함수와 GIL·sleep 조건 |
+| `size`, `params.increments_per_worker` | 전체 증가 호출 수와 스레드당 호출 수 |
+| `params.yield_between`, `params.start_barrier` | 인위적 대기와 시작 장벽의 사용 여부 |
+| `check`, `expected_check` | 최종 카운터와 기대값 |
+| `finished_calls` | 예외 없이 끝난 증가 함수 호출 수 |
+| `valid` | 모든 요청 호출이 예외 없이 끝났는지 |
+| `correct` | 실행이 유효하고 최종 카운터가 기대값과 같은지 |
+| `worker_results` | 스레드별 OS ID·이름·실제 GIL 상태·완료 호출 수·예외 |
+
+`valid: true`인데 `correct: false`이면 기대값 불일치가 관찰된 것이다. `valid: false`인 실행 오류는 불일치 횟수에 섞지 않고 원인부터 해결한다. 기본 함수가 모든 시도에서 정상값을 내더라도 경쟁 상태가 없다고 결론 내리지 않는다. 수정 대상은 기대값이 모두 맞는지와 실제 락의 공유·적용 범위를 함께 확인한다. 수정 대상에서 불일치가 나오면 원자료를 보존하고 종료 코드 1로 알린다.
 
 ## 결과 정리
 
