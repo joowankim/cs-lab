@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import time
+import asyncio
 
 from workloads import count_primes
 
@@ -19,8 +20,9 @@ async def blocking_wait(work: LoopWork) -> int:
 
 
 async def candidate_wait(work: LoopWork) -> int:
-    # 진행 단계에서 비동기 대기로 바꾼다. 현재는 이벤트 루프를 막는 기본 동작이다.
-    return await blocking_wait(work)
+    # 대기 중에는 이벤트 루프가 다른 준비된 Task를 실행할 수 있다.
+    await asyncio.sleep(work.sleep_s)
+    return 1
 
 
 async def compute(work: LoopWork) -> int:
