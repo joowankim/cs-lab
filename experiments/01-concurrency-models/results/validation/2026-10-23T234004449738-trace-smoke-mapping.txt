@@ -1,0 +1,22 @@
+sequential: 작업자 상한=1, 작업 수=8, 관찰한 OS 스레드=1, 작업용 asyncio Task=0
+PID	OS 스레드 ID	스레드 이름	작업 번호	asyncio Task 이름
+39052	1623116	MainThread	0,1,2,3,4,5,6,7	-
+
+threads: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=4, 작업용 asyncio Task=0
+PID	OS 스레드 ID	스레드 이름	작업 번호	asyncio Task 이름
+39052	1623210	ThreadPoolExecutor-0_0	0,4	-
+39052	1623211	ThreadPoolExecutor-0_1	1,5	-
+39052	1623212	ThreadPoolExecutor-0_2	2,7	-
+39052	1623213	ThreadPoolExecutor-0_3	3,6	-
+
+processes: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=4, 작업용 asyncio Task=0
+PID	OS 스레드 ID	스레드 이름	작업 번호	asyncio Task 이름
+39062	1623226	MainThread	0,3	-
+39063	1623228	MainThread	1,4,6	-
+39064	1623229	MainThread	2,5	-
+39065	1623230	MainThread	7	-
+
+asyncio: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=1, 작업용 asyncio Task=8
+PID	OS 스레드 ID	스레드 이름	작업 번호	asyncio Task 이름
+39052	1623116	MainThread	0,1,2,3,4,5,6,7	Task-2,Task-3,Task-4,Task-5,Task-6,Task-7,Task-8,Task-9
+

@@ -1,0 +1,230 @@
+{
+  "run_id": "2026-10-23T234001327461-completion-checks",
+  "timezone": "Asia/Seoul",
+  "purpose": "completion_validation",
+  "code_commit": "17b6317543aa8833a1ed3d30b73136b2fc2aa7b8",
+  "unit_tests": [
+    {
+      "runtime": "normal 3.14.2",
+      "gil": true,
+      "tests": 27,
+      "result": "passed"
+    },
+    {
+      "runtime": "free-threaded 3.14.2t",
+      "gil": false,
+      "tests": 27,
+      "result": "passed"
+    }
+  ],
+  "runs": [
+    {
+      "name": "cpu_workers",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/bench.py",
+        "--smoke",
+        "--models",
+        "sequential",
+        "threads",
+        "processes",
+        "--workers",
+        "8",
+        "--compare-workers",
+        "4"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234001569083-smoke-env.txt",
+        "results/validation/2026-10-23T234001569083-smoke-python-3.14.2-gil-on.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234001569083-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234001569083-smoke-python-3.14.2-gil-on.jsonl\n기능 검증 완료. 이 결과로 성능 순위를 판단하지 않는다.\n"
+    },
+    {
+      "name": "io_models",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/bench.py",
+        "--smoke",
+        "--task",
+        "io",
+        "--models",
+        "sequential",
+        "threads",
+        "processes",
+        "asyncio",
+        "--workers",
+        "4"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234002308299-smoke-env.txt",
+        "results/validation/2026-10-23T234002308299-smoke-python-3.14.2-gil-on.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234002308299-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234002308299-smoke-python-3.14.2-gil-on.jsonl\n기능 검증 완료. 이 결과로 성능 순위를 판단하지 않는다.\n"
+    },
+    {
+      "name": "gil_cpu",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2t",
+        "python/compare_gil.py",
+        "--smoke",
+        "--task",
+        "cpu",
+        "--models",
+        "sequential",
+        "threads",
+        "processes",
+        "asyncio",
+        "--workers",
+        "4"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234002743843-gil-compare-smoke-env.txt",
+        "results/validation/2026-10-23T234002743843-gil-compare-smoke-python-3.14.2t.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234002743843-gil-compare-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234002743843-gil-compare-smoke-python-3.14.2t.jsonl\nGIL 두 조건의 기능 검증 완료. 성능 가설은 판단하지 않는다.\n"
+    },
+    {
+      "name": "gil_io",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2t",
+        "python/compare_gil.py",
+        "--smoke",
+        "--task",
+        "io",
+        "--models",
+        "sequential",
+        "threads",
+        "processes",
+        "asyncio",
+        "--workers",
+        "4"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234003553989-gil-compare-smoke-env.txt",
+        "results/validation/2026-10-23T234003553989-gil-compare-smoke-python-3.14.2t.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234003553989-gil-compare-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234003553989-gil-compare-smoke-python-3.14.2t.jsonl\nGIL 두 조건의 기능 검증 완료. 성능 가설은 판단하지 않는다.\n"
+    },
+    {
+      "name": "trace_io",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/trace_execution.py",
+        "--smoke",
+        "--task",
+        "io",
+        "--models",
+        "sequential",
+        "threads",
+        "processes",
+        "asyncio",
+        "--workers",
+        "4"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234004449738-trace-smoke-env.txt",
+        "results/validation/2026-10-23T234004449738-trace-smoke-mapping.txt",
+        "results/validation/2026-10-23T234004449738-trace-smoke-python-3.14.2-gil-on.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234004449738-trace-smoke-env.txt\n기록: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234004449738-trace-smoke-python-3.14.2-gil-on.jsonl\n대응표: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234004449738-trace-smoke-mapping.txt\nsequential: 작업자 상한=1, 작업 수=8, 관찰한 OS 스레드=1, 작업용 asyncio Task=0\nPID\tOS 스레드 ID\t스레드 이름\t작업 번호\tasyncio Task 이름\n39052\t1623116\tMainThread\t0,1,2,3,4,5,6,7\t-\n\nthreads: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=4, 작업용 asyncio Task=0\nPID\tOS 스레드 ID\t스레드 이름\t작업 번호\tasyncio Task 이름\n39052\t1623210\tThreadPoolExecutor-0_0\t0,4\t-\n39052\t1623211\tThreadPoolExecutor-0_1\t1,5\t-\n39052\t1623212\tThreadPoolExecutor-0_2\t2,7\t-\n39052\t1623213\tThreadPoolExecutor-0_3\t3,6\t-\n\nprocesses: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=4, 작업용 asyncio Task=0\nPID\tOS 스레드 ID\t스레드 이름\t작업 번호\tasyncio Task 이름\n39062\t1623226\tMainThread\t0,3\t-\n39063\t1623228\tMainThread\t1,4,6\t-\n39064\t1623229\tMainThread\t2,5\t-\n39065\t1623230\tMainThread\t7\t-\n\nasyncio: 작업자 상한=4, 작업 수=8, 관찰한 OS 스레드=1, 작업용 asyncio Task=8\nPID\tOS 스레드 ID\t스레드 이름\t작업 번호\tasyncio Task 이름\n39052\t1623116\tMainThread\t0,1,2,3,4,5,6,7\tTask-2,Task-3,Task-4,Task-5,Task-6,Task-7,Task-8,Task-9\n\n추적 완료. 이 기록은 성능 비교나 모든 스케줄링 가능성의 증명에 사용하지 않는다.\n"
+    },
+    {
+      "name": "counter",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/counter_lab.py",
+        "--smoke",
+        "--cases",
+        "unlocked",
+        "candidate"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234004809204-counter-smoke-env.txt",
+        "results/validation/2026-10-23T234004809204-counter-smoke-python-3.14.2.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234004809204-counter-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234004809204-counter-smoke-python-3.14.2.jsonl\n작은 입력의 실행·저장 검증 완료. 재현 빈도나 수정 완료를 판단하지 않는다.\n"
+    },
+    {
+      "name": "singleton",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/singleton_lab.py",
+        "--smoke",
+        "--cases",
+        "unlocked",
+        "candidate"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234005039965-singleton-smoke-env.txt",
+        "results/validation/2026-10-23T234005039965-singleton-smoke-python-3.14.2.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234005039965-singleton-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234005039965-singleton-smoke-python-3.14.2.jsonl\n작은 입력의 실행·저장 검증 완료. 재현 빈도나 수정 완료를 판단하지 않는다.\n"
+    },
+    {
+      "name": "loop",
+      "command": [
+        "uv",
+        "run",
+        "--offline",
+        "--no-cache",
+        "--python",
+        "3.14.2+gil",
+        "python/loop_lab.py",
+        "--smoke",
+        "--cases",
+        "idle",
+        "blocking",
+        "candidate",
+        "cpu"
+      ],
+      "returncode": 0,
+      "created_files": [
+        "results/validation/2026-10-23T234005278187-loop-smoke-env.txt",
+        "results/validation/2026-10-23T234005278187-loop-smoke-python-3.14.2.jsonl"
+      ],
+      "stderr": "환경: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234005278187-loop-smoke-env.txt\n결과: /Users/kimjoowan/projects/cs-lab/experiments/01-concurrency-models/results/validation/2026-10-23T234005278187-loop-smoke-python-3.14.2.jsonl\n작은 입력의 실행·저장 검증 완료. 지연 가설은 본 측정에서 판단한다.\n"
+    }
+  ]
+}
