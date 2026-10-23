@@ -1,0 +1,4 @@
+asyncio: 작업자 상한=4, 작업 수=40, 관찰한 OS 스레드=1, 작업용 asyncio Task=40
+PID	OS 스레드 ID	스레드 이름	작업 번호	asyncio Task 이름
+11355	1381536	MainThread	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39	Task-10,Task-11,Task-12,Task-13,Task-14,Task-15,Task-16,Task-17,Task-18,Task-19,Task-2,Task-20,Task-21,Task-22,Task-23,Task-24,Task-25,Task-26,Task-27,Task-28,Task-29,Task-3,Task-30,Task-31,Task-32,Task-33,Task-34,Task-35,Task-36,Task-37,Task-38,Task-39,Task-4,Task-40,Task-41,Task-5,Task-6,Task-7,Task-8,Task-9
+

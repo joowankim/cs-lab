@@ -12,8 +12,8 @@ R = TypeVar("R")
 
 
 # 여기서 비교할 방식과 작업자 수를 바꾼다. 변경 전에는 예상을 먼저 기록한다.
-MODELS = ("sequential", "threads", "processes")
-WORKERS = 8
+MODELS = ("sequential", "threads", "processes", "asyncio")
+WORKERS = 4
 
 
 def run_sequential(jobs: list[T], workers: int, job_fn: Callable[[T], R]) -> list[R]:
