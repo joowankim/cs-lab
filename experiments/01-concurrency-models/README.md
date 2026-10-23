@@ -85,7 +85,7 @@ Python으로 소수를 계산하는 작업 A와 외부 서버의 응답을 받�
 - 사람은 `ThreadPoolExecutor`와 `ProcessPoolExecutor` 사용 경험이 있으며, 준비된 코드를 검토한 뒤 실행 방식과 작업자 수를 직접 수정하는 방식을 선택했다. [models.py](python/models.py)의 `MODELS`, `WORKERS`와 실행 함수를 살펴본다. 소수 계산·검증·측정·저장은 에이전트가 준비한다.
 - 실제 장비는 Apple M2 Pro이며 물리 코어와 논리 CPU가 각각 12개다. 성능 코어 8개와 효율 코어 4개로 구성된다. 앞선 문답의 논리 CPU 4개는 가정이었으며 실제 환경과 구분한다.
 - uv 0.12.5와 일반 CPython 3.14.2를 확인했다. 해당 Python에서 `sys._is_gil_enabled()`는 `True`, free-threaded 빌드 여부는 `False`였다. `InterpreterPoolExecutor` API의 존재도 확인했으나 실행 검증은 아직 하지 않았다.
-- 최초 환경 점검 당시 uv가 찾은 설치 목록에는 free-threaded 빌드가 없었다. 본 측정 시점의 환경은 별도로 다시 기록한다.
+- 최초 환경 점검 당시 uv가 찾은 설치 목록에는 free-threaded 빌드가 없었다. 이후 3.14.2t를 설치하고 아래 free-threaded 환경 준비에 기록했다. 본 측정 시점의 환경은 별도로 다시 기록한다.
 - 정답 경계값, 검증용 소수 개수, GIL 불일치 거부, 워밍업·실패 제외 집계를 확인하는 검사 4개를 통과했다. N=100인 검증 실행에서는 세 방식이 각각 워밍업과 검증을 마쳤고, 6개 기록 모두 `check: 200`과 GIL 상태 확인을 통과했다. [검증 환경](results/validation/2026-10-23T002847377299-smoke-env.txt)과 [검증 원자료](results/validation/2026-10-23T002847377299-smoke-python-3.14.2-gil-on.jsonl)를 남겼다. 이 값으로 본 실험의 성능 가설을 판단하지 않는다.
 
 ### 코드 검토에서 확인한 작업량
@@ -120,6 +120,51 @@ Python으로 소수를 계산하는 작업 A와 외부 서버의 응답을 받�
 - 설명 후 사람의 답(요약): GIL만 끈 상태가 free-threaded 실행인지 확인했다. 그 경우에도 B는 즉시 재개할 수 없으며, A가 양보 없이 계산하는 조건에서는 A의 작업이 끝나야 이벤트 루프가 다시 실행 기회를 얻는다고 설명했다. 이를 이벤트 루프가 제어권을 "회수"한다고 표현했다.
 - 에이전트 피드백: free-threaded 빌드에서 실제 GIL을 끈 조건을 뜻한다. free-threaded 빌드도 GIL을 켜서 실행할 수 있으므로 빌드와 실행 상태를 구분한다. 이벤트 루프가 실행 중인 Task를 강제로 중단해 제어권을 회수하는 것은 아니다. A가 완료되거나 스스로 양보해야 실행 흐름이 루프로 돌아오며, 이번 조건에서는 중간 양보가 없으므로 A의 완료를 기다린다. [free-threaded 빌드의 GIL 설정](https://docs.python.org/3.14/howto/free-threading-python.html#the-global-interpreter-lock-in-free-threaded-python)
 - 현재 확인한 부분: 설명을 보충한 뒤, GIL이 없어도 같은 이벤트 루프의 Task가 CPU 계산 때문에 지연될 수 있음을 이유와 함께 답했다. 도움받아 구분한 내용으로 남기며, 실험 완료 후 해설 없이 설명하는 확인은 별도로 한다.
+
+## 현재 준비 상태
+
+### 같은 free-threaded 빌드의 GIL 비교: 준비 완료
+
+일반 빌드와 패치 버전을 맞춘 CPython 3.14.2t를 `uv python install --no-bin 3.14.2t`로 설치했다. `Py_GIL_DISABLED`가 1인 빌드이며, 같은 실제 실행 파일에서 `PYTHON_GIL=0`과 `1`을 각각 검증했다. 런타임 버전과 실제 경로는 아래 환경 파일에 남겼다.
+
+GIL을 켠 조건과 끈 조건에서 각각 자동 검사 11개가 통과했다. 환경 기록을 보완한 뒤 CPU·I/O 네 방식의 작은 입력 기록 32개가 정답과 GIL 상태 확인을 통과했다. CPU는 N=100·작업 8개, I/O는 대기 0.001초·작업 8개이며 성능 가설을 판단하는 본 측정은 아니다.
+
+| 작업 | GIL | 환경 | 검증 원자료 |
+|---|---|---|---|
+| CPU | 끔 | [환경](results/validation/2026-10-23T094844046575-smoke-env.txt) | [JSONL](results/validation/2026-10-23T094844046575-smoke-python-3.14.2t-gil-off.jsonl) |
+| CPU | 켬 | [환경](results/validation/2026-10-23T094846365660-smoke-env.txt) | [JSONL](results/validation/2026-10-23T094846365660-smoke-python-3.14.2t-gil-on.jsonl) |
+| I/O | 끔 | [환경](results/validation/2026-10-23T094849547078-smoke-env.txt) | [JSONL](results/validation/2026-10-23T094849547078-smoke-python-3.14.2t-gil-off.jsonl) |
+| I/O | 켬 | [환경](results/validation/2026-10-23T094851756037-smoke-env.txt) | [JSONL](results/validation/2026-10-23T094851756037-smoke-python-3.14.2t-gil-on.jsonl) |
+
+일반 빌드와의 비교에는 빌드 차이도 포함된다. GIL 설정의 영향을 따로 보기 위한 같은 free-threaded 빌드의 켜짐·꺼짐 조건도 준비했다.
+
+- 조건: 같은 3.14.2t에서 N=200,000·작업 8개·스레드 4개를 유지하고 GIL 설정만 바꾼다. 생성·결과 수집·종료를 포함한 전체 시간의 중앙값을 비교한다.
+- 사람의 예상과 이유(요약): GIL을 켜면 스레드 4개도 순차 실행과 시간이 거의 같을 것으로 예상했다. GIL을 끄면 동시에 CPU 계산을 진행할 수 있는 스레드가 1개에서 4개가 되므로 작업 시간이 "약 1/4배 감소"할 것으로 예상했다.
+- 에이전트의 해석과 피드백: 문맥상 GIL을 끈 시간이 켠 시간의 약 1/4로 줄어든다는 예상으로 이해한다. 이는 시간의 약 75% 단축이다. 4개 스레드가 계산을 고르게 나누고 추가 비용을 무시하면 기대할 수 있는 비율이며, 생성·수집·종료 등을 포함한 실제 전체 시간의 비율은 측정으로 확인한다.
+- 판단 범위에 대한 사람의 요청: "약 1/4"로 인정할 범위는 에이전트가 제안해 달라고 했다.
+- 에이전트의 제안 기준: 시간 비율 `GIL 끔 중앙값 ÷ GIL 켬 중앙값`이 0.20~0.30이면 수치 예상과 부합한 것으로 판단한다. 25%를 중심으로 ±5퍼센트포인트를 둔 사전 허용 범위이며, 측정에서 얻은 오차 범위나 통계적 신뢰구간은 아니다.
+- 범위 밖이면 "약 1/4"라는 수치 예상에는 맞지 않은 것으로 기록한다. 0.20 미만은 예상보다 큰 단축, 0.30 초과는 예상보다 작은 단축 또는 단축 없음으로 구분한다. 실제로 빨라졌는지는 비율이 1보다 작은지도 따로 본다. 예를 들어 0.40이면 더 빨라졌지만 약 1/4라는 예상에는 부합하지 않는다. 두 GIL 조건의 차이가 작고 반복마다 빠른 쪽이 바뀌면 기존 기준대로 속도 우위 판단을 보류한다.
+- N=20,000에 대한 사람의 예상과 이유(요약): GIL을 꺼도 전체 시간에 거의 변화가 없을 것으로 예상했다. 앞서 N=200,000과 20,000을 비교한 결과에서, 작업이 충분히 작으면 순차와 병렬 처리의 시간이 크게 다르지 않다고 이해한 것을 근거로 들었다.
+- 에이전트 피드백: 앞선 본 측정은 일반 CPython 3.14.2에서 GIL을 켠 채 실행 방식을 바꾼 비교였다. N=20,000의 중앙값은 순차 0.068357초, 스레드 0.065934초, 프로세스 0.095484초였으며 프로세스는 순차보다 약 40% 느렸다. 작은 작업에서 프로세스의 속도 이점을 얻지 못한 결과를, free-threaded 빌드에서 스레드의 GIL을 꺼도 변화가 없다는 직접 근거로 쓰지는 않는다. 그 예상은 새 조건에서 확인할 가설로 보존한다.
+- 작은 작업에 대한 에이전트의 제안 기준: 같은 시간 비율이 0.90~1.10이면 "거의 변화 없음"이라는 예상에 부합한 것으로 판단한다. 사전에 정하는 ±10% 허용 범위이며, 두 조건의 시간이 정확히 같다는 증명이나 통계적 신뢰구간은 아니다. 범위 밖이면 실제 변화 방향과 크기를 기록하고, 속도 우위가 반복마다 바뀌는 경우의 기존 보류 기준도 유지한다.
+- I/O에 대한 사람의 최초 예상과 의문(요약): 같은 free-threaded 빌드에서 `time.sleep(0.1)` 작업 40개를 스레드 4개로 처리할 때, GIL을 끄면 4초에서 1초로 줄 것으로 예상했다. 동시에 대기할 수 있는 스레드가 1개에서 4개로 늘어난다고 설명했다. 이어 `time.sleep()`이 CPU를 점유하지 않는다면 GIL을 켜도 스레드 4개가 동시에 기다릴 수 있는 것 아닌지 질문했다.
+- 에이전트 피드백: `time.sleep()`은 CPython 구현에서 대기 전에 GIL을 해제한다. GIL이 켜져 있어도 여러 스레드가 차례로 sleep에 들어가 대기 시간을 겹칠 수 있다. CPU를 사용하지 않는다는 사실만으로 GIL이 자동 해제되는 것은 아니며, 호출 구현을 확인해야 한다. [CPython 3.14.2 sleep 구현](https://github.com/python/cpython/blob/v3.14.2/Modules/timemodule.c)
+- 에이전트 설명: 이번 비교에서는 GIL을 켜거나 꺼도 작업자 수가 4개로 고정된다. 부대비용과 스케줄링 지연을 제외하면 두 조건 모두 `40 ÷ 4 × 0.1 = 1초`로 계산한다. 4초에서 1초로 줄어드는 계산은 작업자 1개와 4개를 비교할 때 해당한다. 이는 설명을 위한 계산이며 실제 측정값이나 사람의 수정한 예상은 아니다.
+- 설명 후 사람의 I/O 예상과 이유(요약): 두 조건 모두 동시에 대기할 수 있는 스레드가 4개이므로 GIL 켜짐·꺼짐의 전체 시간 차이는 거의 없을 것으로 예상했다.
+- 에이전트 피드백과 기준: 이번 `time.sleep()` 중심의 조건에 대한 예상으로 기록한다. 다른 I/O 작업이나 CPU 처리가 섞인 작업 전체에 일반화하지 않는다. "거의 변화 없음"의 사전 허용 범위는 앞서 제안한 시간 비율 0.90~1.10을 적용한다. 실제 전체 시간은 측정으로 확인하며 본 측정은 아직 하지 않았다.
+
+GIL 상태별 측정용 Python 프로세스를 하나씩 유지하고 `compare_gil.py`에서 한 번에 한 조건만 요청한다. 워밍업과 본 측정은 같은 측정용 프로세스에서 이어가며, 반복마다 전체 조건 순서를 뒤집어 두 GIL 상태의 선후 관계도 바꾼다. 각 요청은 기존 `bench.measure()`를 사용한다. 결과의 작업자 수는 그 안에서 만드는 실험 대상 풀이나 세마포어의 상한이다.
+
+측정용 프로그램의 시작과 제어용 통신은 측정 구간 밖에서 수행한다. 비교 대상 풀·이벤트 루프의 생성부터 결과 수집·종료까지는 매번 전체 시간에 포함한다. 환경 파일의 `measurement_runtimes`에 두 조건의 실제 실행 파일·빌드·GIL 상태·PID를 각각 기록한다.
+
+자동 검사 12개가 통과했고, 교차 실행의 작은 입력 검증은 CPU·I/O 각각 16개 기록이 통과했다. 정답, 실제 GIL 상태, 같은 빌드 사용, 워밍업부터 반복까지의 측정 프로세스 유지, 조건 순서 반전과 환경·소스 해시를 확인했다. 일반 빌드의 [기존 검증 명령](results/validation/2026-10-23T110910442825-smoke-python-3.14.2-gil-on.jsonl)도 다시 확인했다.
+
+| 교차 실행 검증 | 환경 | 원자료 |
+|---|---|---|
+| CPU: N=100, 작업 8개 | [환경](results/validation/2026-10-23T110904329069-gil-compare-smoke-env.txt) | [JSONL](results/validation/2026-10-23T110904329069-gil-compare-smoke-python-3.14.2t.jsonl) |
+| I/O: 대기 0.001초, 작업 8개 | [환경](results/validation/2026-10-23T110907435776-gil-compare-smoke-env.txt) | [JSONL](results/validation/2026-10-23T110907435776-gil-compare-smoke-python-3.14.2t.jsonl) |
+
+수치 가설의 판단 대상은 스레드 4개의 GIL 켜짐·꺼짐 비교다. 다른 실행 방식도 함께 기록해 관찰하되, 받지 않은 사람의 수치 예상을 대신 채우지 않는다. 진행 단계에서는 기존에 정한 실행 방식·작업자 수 설정을 사람이 검토·수정하고, 에이전트가 교차 실행과 집계를 맡는다.
 
 ## 작업 규칙
 
@@ -170,7 +215,9 @@ CPU와 I/O 작업을 순차·스레드·프로세스·asyncio로 실행할 수 �
 | [models.py](python/models.py) | 직접 바꿔 볼 `MODELS`·`WORKERS`, 측정과 추적이 함께 사용하는 각 실행 방식 |
 | [workloads.py](python/workloads.py) | 공통 입력 `Job`, 소수 계산과 정답, 동기·비동기 대기, 작업자 GIL 확인 |
 | [bench.py](python/bench.py) | 입력과 반복 순서, 전체 시간 측정, 검증, 환경·원자료 저장과 집계 |
+| [compare_gil.py](python/compare_gil.py) | 같은 free-threaded 빌드에서 GIL 켜짐·꺼짐 조건을 번갈아 실행 |
 | [test_bench.py](python/test_bench.py) | 소수 개수와 집계 규칙 등의 동작 검사 |
+| [test_compare_gil.py](python/test_compare_gil.py) | 런타임·GIL 조건별 집계가 섞이지 않는지 검사 |
 | [trace_execution.py](python/trace_execution.py) | 작업 시작·종료 시점의 프로세스·스레드·Task 식별과 대응표 저장 |
 | [test_trace_execution.py](python/test_trace_execution.py) | 실행 위치, asyncio 대기 전후 식별자, 동시 실행 상한과 오류 기록 검사 |
 
@@ -279,9 +326,40 @@ JSONL의 행은 입력 작업 순서다. 실행 순서를 볼 때는 `events[].a
 
 결과에는 공통 키 외에 `purpose`, `valid`, `expected_check`, `gil_enabled`, `run_id`, `environment_file`, `order_index`, `seed`를 남긴다. 검증 실패에는 `error`도 기록한다.
 
+GIL 교차 실행은 결과에 `comparison: "gil_same_build"`와 `measurement_pid`를 추가한다. 환경 파일의 최상위 런타임 정보는 제어 프로그램이며, 실제 측정 런타임은 `measurement_runtimes`에 GIL 상태별로 기록한다. 집계는 런타임·GIL 상태별로 먼저 나눈다.
+
 작업자 수 비교를 준비하면서 CPU 사용량 기록을 추가했다. 측정 전후 `resource.getrusage()`의 사용자·시스템 CPU 시간 차이를 구해, 부모 프로세스의 모든 스레드 합계를 `cpu_parent_s`, 종료와 회수를 마친 자식 프로세스 합계를 `cpu_children_s`에 기록한다. [resource 문서](https://docs.python.org/3.14/library/resource.html#resource.getrusage)
 
 `cpu_percent`는 두 CPU 시간의 합을 `wall_s`로 나누고 100을 곱한 값이다. 논리 CPU 하나를 측정 구간 내내 사용하면 약 100%인 기준이며, 시스템 전체 사용률이나 특정 순간의 병렬 실행 수는 아니다. 경과 시간 측정 바로 바깥에서 누적값을 읽으므로 경계에 작은 차이가 있다. 다른 앱과 아직 실행 중인 보조 자식 프로세스는 포함하지 않는다. `params.cpu_accounting`에는 `"getrusage_self_and_reaped_children"`를 기록하며, 앞선 첫 본 측정에는 이 필드들이 없다.
+
+### Free-threaded 빌드의 작은 입력 검증
+
+같은 3.14.2t에서 GIL 상태만 바꿔 검증한다. `PYTHON_GIL`이 실제 설정이고 `--expect-gil`은 설정이 맞는지 확인하는 옵션이다. 작업자에서도 같은 상태인지 검사한다. [빌드 선택](https://docs.astral.sh/uv/concepts/python-versions/#free-threaded-python), [GIL 설정](https://docs.python.org/3.14/howto/free-threading-python.html#the-global-interpreter-lock-in-free-threaded-python)
+
+```sh
+env PYTHON_GIL=0 uv run --python 3.14.2t python/bench.py --smoke --task cpu --models sequential threads processes asyncio --workers 4 --expect-gil off
+env PYTHON_GIL=1 uv run --python 3.14.2t python/bench.py --smoke --task cpu --models sequential threads processes asyncio --workers 4 --expect-gil on
+```
+
+I/O 기능 검증은 `--task cpu`를 `--task io`로 바꾼다.
+
+### GIL 켜짐·꺼짐 교차 실행
+
+다음 명령으로 두 GIL 상태를 섞어 실행하는 절차를 작은 입력에서 확인한다. 스크립트가 같은 실행 파일로 두 측정 프로세스를 만들고 각각의 `PYTHON_GIL`을 설정·검사한다.
+
+```sh
+uv run --python 3.14.2t python/compare_gil.py --smoke --task cpu --models sequential threads processes asyncio --workers 4
+uv run --python 3.14.2t python/compare_gil.py --smoke --task io --models sequential threads processes asyncio --workers 4
+```
+
+진행 단계의 본 측정 예정 명령은 아래와 같다. 아직 실행하지 않았다. 기본 CPU 입력은 N=200,000과 20,000에 작업 8개, I/O 입력은 대기 0.1초에 작업 40개다. 각 입력·방식·GIL 조합에 워밍업 1회와 본 측정 3회를 적용하므로 CPU는 64개, I/O는 32개 기록이 된다.
+
+```sh
+uv run --python 3.14.2t python/compare_gil.py --task cpu --models sequential threads processes asyncio --workers 4
+uv run --python 3.14.2t python/compare_gil.py --task io --models sequential threads processes asyncio --workers 4
+```
+
+`--sizes`, `--sleep-s`, `--tasks`, `--compare-workers`, `--repeats`, `--seed`, `--output-dir`의 의미는 `bench.py`와 같다. 결과는 `gil-compare`가 들어간 새 파일로 저장하며 GIL 켜짐·꺼짐을 별도로 집계한다.
 
 ## 소스 조사: 한 인터프리터마다 GIL이 하나만 존재하는가
 

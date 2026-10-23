@@ -1,0 +1,104 @@
+{
+  "started_at": "2026-10-23T11:09:04.329069+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "smoke",
+  "command": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpMlA7NE/environments-v2/compare-gil-f880c390bf24f1b9/bin/python python/compare_gil.py --smoke --task cpu --models sequential threads processes asyncio --workers 4",
+  "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+  "executable": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpMlA7NE/environments-v2/compare-gil-f880c390bf24f1b9/bin/python",
+  "resolved_executable": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none/bin/python3.14t",
+  "base_prefix": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": false,
+  "free_threaded_build": true,
+  "gil_configuration": {
+    "PYTHON_GIL": null,
+    "xoption_gil": null
+  },
+  "config": {
+    "task": "cpu",
+    "models": [
+      "sequential",
+      "threads",
+      "processes",
+      "asyncio"
+    ],
+    "workers": 4,
+    "compare_workers": [],
+    "sizes": [
+      100
+    ],
+    "sleep_s": 0.0,
+    "tasks": 8,
+    "repeats": 1,
+    "seed": 0,
+    "output_dir": null,
+    "smoke": true
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "84680f5a35fe026acf3d9b24c69e1f67e456d427",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n?? python/\n?? results/2026-10-23T070246879341-benchmark-cpu-observation.txt\n?? results/2026-10-23T070246879341-benchmark-env.txt\n?? results/2026-10-23T070246879341-benchmark-python-3.14.2-gil-on.jsonl\n?? results/validation/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "compare_gil.py": "b24bdb249b3b74fa4b9a67c1eb6e91f89911cc7ea908885b2f04afd69a79d2ba",
+    "bench.py": "dbeb6fb915e6bb70eb6dca480fe016a8118b79626bc1cc95e1e25466a0fa79d3",
+    "models.py": "e0615ba9bb2efd7333d375d20548026a41c5356c65a0c604beaccc896babdd16",
+    "workloads.py": "73b03fa986b2cc7ab6abe873682c77e53bfa0a7e87817425dfc7166bae20ef74"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "role": "comparison_controller",
+  "comparison": "gil_same_build",
+  "measurement_runtimes": {
+    "gil=off": {
+      "runtime": "cpython-3.14.2t",
+      "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+      "variant": "gil=off",
+      "gil_enabled": false,
+      "free_threaded_build": true,
+      "PYTHON_GIL": "0",
+      "pid": 80697,
+      "executable": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpMlA7NE/environments-v2/compare-gil-f880c390bf24f1b9/bin/python",
+      "resolved_executable": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none/bin/python3.14t",
+      "base_prefix": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none"
+    },
+    "gil=on": {
+      "runtime": "cpython-3.14.2t",
+      "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+      "variant": "gil=on",
+      "gil_enabled": true,
+      "free_threaded_build": true,
+      "PYTHON_GIL": "1",
+      "pid": 80698,
+      "executable": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpMlA7NE/environments-v2/compare-gil-f880c390bf24f1b9/bin/python",
+      "resolved_executable": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none/bin/python3.14t",
+      "base_prefix": "/Users/kimjoowan/.local/share/uv/python/cpython-3.14.2+freethreaded-macos-aarch64-none"
+    }
+  }
+}

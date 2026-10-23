@@ -1,0 +1,74 @@
+{
+  "started_at": "2026-10-23T09:46:48.392173+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "smoke",
+  "command": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpxS2NY3/environments-v2/bench-57cf48ecc66ac8b1/bin/python python/bench.py --smoke --task cpu --models sequential threads processes asyncio --workers 4 --expect-gil off",
+  "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+  "executable": "/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpxS2NY3/environments-v2/bench-57cf48ecc66ac8b1/bin/python",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": false,
+  "free_threaded_build": true,
+  "gil_configuration": {
+    "PYTHON_GIL": "0",
+    "xoption_gil": null
+  },
+  "config": {
+    "task": "cpu",
+    "models": [
+      "sequential",
+      "threads",
+      "processes",
+      "asyncio"
+    ],
+    "workers": 4,
+    "compare_workers": [],
+    "sizes": [
+      100
+    ],
+    "sleep_s": 0.0,
+    "tasks": 8,
+    "repeats": 1,
+    "expect_gil": "off",
+    "seed": 0,
+    "output_dir": null,
+    "smoke": true
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "84680f5a35fe026acf3d9b24c69e1f67e456d427",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n?? python/\n?? results/2026-10-23T070246879341-benchmark-cpu-observation.txt\n?? results/2026-10-23T070246879341-benchmark-env.txt\n?? results/2026-10-23T070246879341-benchmark-python-3.14.2-gil-on.jsonl\n?? results/validation/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "bench.py": "11b0f8eb77a6d5469188addbf6c375e5e3de1f270bad77f2ac3632e28bfac5f7",
+    "models.py": "e0615ba9bb2efd7333d375d20548026a41c5356c65a0c604beaccc896babdd16",
+    "workloads.py": "73b03fa986b2cc7ab6abe873682c77e53bfa0a7e87817425dfc7166bae20ef74"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  }
+}
