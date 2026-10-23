@@ -1,0 +1,80 @@
+{
+  "started_at": "2026-10-23T09:31:47.306762+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "trace",
+  "command": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpPYy0Xq/environments-v2/trace-execution-e4071f93980f437e/bin/python python/trace_execution.py --smoke --task cpu",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpPYy0Xq/environments-v2/trace-execution-e4071f93980f437e/bin/python",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "task": "cpu",
+    "models": [
+      "sequential",
+      "threads",
+      "processes",
+      "asyncio"
+    ],
+    "workers": 4,
+    "tasks": 8,
+    "n": 100,
+    "sleep_s": 0.001,
+    "expect_gil": "on",
+    "output_dir": null,
+    "smoke": true
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "84680f5a35fe026acf3d9b24c69e1f67e456d427",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n?? python/\n?? results/2026-10-23T070246879341-benchmark-cpu-observation.txt\n?? results/2026-10-23T070246879341-benchmark-env.txt\n?? results/2026-10-23T070246879341-benchmark-python-3.14.2-gil-on.jsonl\n?? results/validation/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "trace_execution.py": "37f5a63eed85475ea16b7784e16d12e1dd5b3a00ba27c1ed8ff42e4ef87d0f61",
+    "bench.py": "0f35edf6ba9e4a46e2d1171ef88af75a041c221bfd9213c62bd450dfd43c7eb3",
+    "models.py": "e0615ba9bb2efd7333d375d20548026a41c5356c65a0c604beaccc896babdd16",
+    "workloads.py": "73b03fa986b2cc7ab6abe873682c77e53bfa0a7e87817425dfc7166bae20ef74"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "validation": true,
+  "trace_schema": 1,
+  "driver": {
+    "event": "driver",
+    "at_ns": 48608861850750,
+    "elapsed_s": 1.167e-06,
+    "pid": 71187,
+    "native_thread_id": 849835,
+    "thread_name": "MainThread",
+    "loop_id": null,
+    "asyncio_task_id": null,
+    "asyncio_task_name": null,
+    "gil_enabled": true
+  }
+}

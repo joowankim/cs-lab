@@ -171,6 +171,8 @@ CPU와 I/O 작업을 순차·스레드·프로세스·asyncio로 실행할 수 �
 | [workloads.py](python/workloads.py) | 공통 입력 `Job`, 소수 계산과 정답, 동기·비동기 대기, 작업자 GIL 확인 |
 | [bench.py](python/bench.py) | 입력과 반복 순서, 전체 시간 측정, 검증, 환경·원자료 저장과 집계 |
 | [test_bench.py](python/test_bench.py) | 소수 개수와 집계 규칙 등의 동작 검사 |
+| [trace_execution.py](python/trace_execution.py) | 작업 시작·종료 시점의 프로세스·스레드·Task 식별과 대응표 저장 |
+| [test_trace_execution.py](python/test_trace_execution.py) | 실행 위치, asyncio 대기 전후 식별자, 동시 실행 상한과 오류 기록 검사 |
 
 ### 작은 입력으로 동작 확인
 
@@ -228,6 +230,46 @@ uv run --python 3.14.2+gil python/bench.py --task io --models sequential threads
 ```
 
 `--sizes`는 CPU에만, `--sleep-s`는 I/O에만 사용한다. 같은 작업자 수는 중복하지 않고 순차 실행은 입력 조건마다 한 번만 구성한다. 첫 실행 순서는 `--seed`로 섞고, 반복마다 전체 순서를 뒤집는다. CPU 정답은 시간 측정 밖에서 체 알고리즘으로 구하고, I/O는 각 작업의 반환값 1과 완료한 작업 수를 확인한다. 틀린 결과는 `valid: false`와 오류를 남긴 뒤 실행을 중단한다. GIL 상태는 측정 전과 각 작업자에서 확인하며, 기본값인 `--expect-gil on`과 다르면 실행하지 않는다. 이 옵션은 GIL을 켜거나 끄는 설정이 아니다.
+
+### 작업·스레드·Task 추적
+
+어떤 스레드가 어떤 작업을 실제로 실행했는지 확인하기 위한 별도 진단이다. `trace_execution.py`는 `bench.py`와 같은 `models.py`의 실행 함수를 사용한다. 원래 작업 함수를 호출하기 전과 반환한 뒤에 실행 위치를 기록하는 함수를 전달한다. 성능 측정에서는 원래 작업 함수를 직접 전달하므로 추적 기록을 수집하지 않는다.
+
+아래 명령은 준비 단계의 작은 입력만 실행한다. `--smoke`는 작업 8개, CPU의 N=100, I/O 대기 0.001초로 고정한다. 네 방식은 각각 한 번만 실행한다. 성능 측정의 워밍업·반복 집계에 포함하지 않는다.
+
+```sh
+uv run --python 3.14.2+gil python/trace_execution.py --smoke --task io
+uv run --python 3.14.2+gil python/trace_execution.py --smoke --task cpu
+```
+
+특정 방식만 보려면 `--models asyncio` 또는 `--models threads`를 지정한다. `--workers`는 기본 4이며 순차 실행은 항상 1이다. `--smoke`를 빼도 기본 입력은 작업 8개·N=100·대기 0.001초다. 필요하면 `--tasks`, `--n`, `--sleep-s`로 관찰할 입력을 정한다.
+
+작업 하나의 기록을 JSON 한 줄로 저장한다. `purpose: "trace"`로 구분하고, 작은 입력 검증에는 `validation: true`를 남긴다. 각 조건은 `run: 1`이며 `wall_s`와 성능 집계는 만들지 않는다. 순차·스레드·프로세스에서 말하는 일반 작업과 `asyncio.Task` 객체를 구분한다.
+
+| 필드 | 의미 |
+|---|---|
+| `job_id` | 조건 안에서 0부터 붙인 실험 작업 번호 |
+| `events[].event` | `work_start`, `work_end`. 예외로 끝나면 `work_error` |
+| `events[].pid`, `native_thread_id`, `thread_name` | 그 지점의 프로세스 ID, OS 스레드 ID, 스레드 이름 |
+| `events[].loop_id`, `asyncio_task_id`, `asyncio_task_name` | 실행 중인 이벤트 루프와 Task의 식별자·이름. 해당 객체가 없으면 `null` |
+| `origin_ns`, `events[].at_ns`, `elapsed_s` | 조건 시작과 각 기록 지점의 `perf_counter_ns()` 값, 조건 시작 이후 경과 시간 |
+| `events[].gil_enabled` | 런타임의 GIL 활성 여부. GIL 소유자를 추적하는 값이 아니다. |
+| `check`, `expected_check`, `valid` | 개별 작업의 반환값·기대값·검증 결과. 성능 기록의 작업 전체 합계와 구분한다. |
+
+`task`, `size`, `params`는 각각 CPU/I/O 종류, 해당 조건의 총작업 수, 입력 조건이다. 스레드는 PID와 OS 스레드 ID를 함께 보고, Task와 루프의 객체 ID는 같은 실행·조건·프로세스 안에서만 비교한다. ID는 수명이 끝난 뒤 재사용될 수 있다. [OS 스레드 ID](https://docs.python.org/3.14/library/threading.html#threading.get_native_id), [현재 Task 확인](https://docs.python.org/3.14/library/asyncio-task.html#asyncio.current_task)
+
+JSONL의 행은 입력 작업 순서다. 실행 순서를 볼 때는 `events[].at_ns`를 사용한다. asyncio의 시작 기록은 세마포어를 획득한 뒤이며, I/O 종료 기록은 `await`에서 돌아온 뒤다. 두 지점의 스레드·Task ID를 대조할 수 있지만, 모든 실행 중단·재개 지점이나 세마포어를 기다리는 구간을 기록한 것은 아니다.
+
+작은 입력 추적은 `results/validation/`, 그 밖의 추적은 `results/traces/`에 환경·JSONL·`mapping.txt` 대응표를 새 파일로 저장한다. 대응표에는 스레드별 작업 번호와 Task 이름, 실제 관찰한 스레드 수를 표시한다. 환경에는 추적 코드까지 포함한 소스 해시와 실행을 시작한 스레드 정보도 남긴다.
+
+2026-10-23 검증에서는 CPU와 I/O 각각 32개 작업, 64개 시작·종료 지점이 기록됐으며 결과와 식별자 검사를 통과했다. 두 검증의 asyncio 조건에서 작업용 Task 8개가 같은 이벤트 루프·OS 스레드에서 시작하고 종료했다. 본 성능 측정은 실행하지 않았다.
+
+| 입력 | 환경 | 원자료 | 대응표 |
+|---|---|---|---|
+| I/O: 작업 8개, 대기 0.001초 | [환경](results/validation/2026-10-23T093144868975-trace-smoke-env.txt) | [JSONL](results/validation/2026-10-23T093144868975-trace-smoke-python-3.14.2-gil-on.jsonl) | [스레드별 작업](results/validation/2026-10-23T093144868975-trace-smoke-mapping.txt) |
+| CPU: 작업 8개, N=100 | [환경](results/validation/2026-10-23T093147306762-trace-smoke-env.txt) | [JSONL](results/validation/2026-10-23T093147306762-trace-smoke-python-3.14.2-gil-on.jsonl) | [스레드별 작업](results/validation/2026-10-23T093147306762-trace-smoke-mapping.txt) |
+
+이 기록은 해당 실행에서 관찰한 배치다. 설정한 작업자 수만큼 모두 작업에 참여한다고 가정하지 않으며, 관찰되지 않은 다른 배치가 불가능하다고 결론 내리지 않는다. 추적 자체가 실행 순서와 비용에 영향을 줄 수 있으므로 성능 비교 자료로 쓰지 않는다. 시작·종료 구간이 겹친다는 사실만으로 Python 계산의 병렬 실행이나 GIL 소유 관계를 판단하지 않는다.
 
 ### 환경과 원자료
 
