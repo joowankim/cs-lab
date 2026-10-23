@@ -1,0 +1,92 @@
+{
+  "run_id": "2026-10-23T194814493154-benchmark",
+  "timezone": "Asia/Seoul",
+  "purpose": "background_observation",
+  "command": [
+    "uv",
+    "run",
+    "--offline",
+    "--no-cache",
+    "--python",
+    "3.14.2+gil",
+    "python/bench.py",
+    "--compare-workers",
+    "4"
+  ],
+  "returncode": 0,
+  "before": {
+    "at": "2026-10-23T19:48:12.732173+09:00",
+    "power": {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "returncode": 0,
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "returncode": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    },
+    "system_cpu": {
+      "command": [
+        "top",
+        "-l",
+        "2",
+        "-s",
+        "1",
+        "-n",
+        "0"
+      ],
+      "returncode": 0,
+      "stdout": "Processes: 753 total, 4 running, 3 stuck, 746 sleeping, 4008 threads \n2026/10/23 19:48:13\nLoad Avg: 2.85, 3.15, 2.75 \nCPU usage: 7.77% user, 15.1% sys, 77.20% idle \nSharedLibs: 966M resident, 198M data, 153M linkedit.\nMemRegions: 495729 total, 8877M resident, 825M private, 4229M shared.\nPhysMem: 30G used (2627M wired, 324M compressor), 1342M unused.\nVM: 345T vsize, 6144M framework vsize, 0(0) swapins, 0(0) swapouts.\nNetworks: packets: 7721636/9347M in, 1742187/660M out.\nDisks: 721360250/2814G read, 3064670/64G written.\n\n\nProcesses: 752 total, 2 running, 1 stuck, 749 sleeping, 4012 threads \n2026/10/23 19:48:14\nLoad Avg: 2.85, 3.15, 2.75 \nCPU usage: 8.27% user, 9.19% sys, 82.52% idle \nSharedLibs: 966M resident, 198M data, 153M linkedit.\nMemRegions: 0 total, 0B resident, 825M private, 4229M shared.\nPhysMem: 30G used (2644M wired, 324M compressor), 1308M unused.\nVM: 344T vsize, 6144M framework vsize, 0(0) swapins, 0(0) swapouts.\nNetworks: packets: 7722740/9348M in, 1742315/660M out.\nDisks: 721381902/2814G read, 3064847/64G written.\n\n\n",
+      "stderr": ""
+    }
+  },
+  "after": {
+    "at": "2026-10-23T19:48:39.208461+09:00",
+    "power": {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "returncode": 0,
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "returncode": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    },
+    "system_cpu": {
+      "command": [
+        "top",
+        "-l",
+        "2",
+        "-s",
+        "1",
+        "-n",
+        "0"
+      ],
+      "returncode": 0,
+      "stdout": "Processes: 753 total, 3 running, 750 sleeping, 3980 threads \n2026/10/23 19:48:39\nLoad Avg: 3.16, 3.20, 2.78 \nCPU usage: 7.50% user, 14.46% sys, 78.3% idle \nSharedLibs: 966M resident, 198M data, 153M linkedit.\nMemRegions: 495684 total, 8860M resident, 825M private, 4315M shared.\nPhysMem: 30G used (2649M wired, 324M compressor), 1363M unused.\nVM: 345T vsize, 6144M framework vsize, 0(0) swapins, 0(0) swapouts.\nNetworks: packets: 7741347/9374M in, 1745072/661M out.\nDisks: 721758090/2815G read, 3069251/64G written.\n\n\nProcesses: 753 total, 4 running, 749 sleeping, 3991 threads \n2026/10/23 19:48:40\nLoad Avg: 3.39, 3.25, 2.79 \nCPU usage: 8.35% user, 7.51% sys, 84.12% idle \nSharedLibs: 966M resident, 198M data, 153M linkedit.\nMemRegions: 0 total, 0B resident, 825M private, 4315M shared.\nPhysMem: 30G used (2613M wired, 324M compressor), 1360M unused.\nVM: 345T vsize, 6144M framework vsize, 0(0) swapins, 0(0) swapouts.\nNetworks: packets: 7742082/9375M in, 1745209/661M out.\nDisks: 721775564/2815G read, 3069372/64G written.\n\n\n",
+      "stderr": ""
+    }
+  },
+  "observation_scope": "System CPU snapshots before and after the batch; per-case CPU is recorded in JSONL. Background load was not controlled."
+}
