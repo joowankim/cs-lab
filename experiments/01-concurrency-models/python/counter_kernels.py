@@ -18,8 +18,9 @@ def increment_unlocked(counter: Counter, lock: Lock, yield_between: bool) -> Non
 
 
 def increment_candidate(counter: Counter, lock: Lock, yield_between: bool) -> None:
-    # 진행 단계에서 이 함수에 공유 lock을 적용한다. 현재는 락 없는 기본 동작이다.
-    increment_unlocked(counter, lock, yield_between)
+    # 공유 락으로 읽기부터 갱신까지 전체 구간을 보호한다.
+    with lock:
+        increment_unlocked(counter, lock, yield_between)
 
 
 UPDATERS = {"unlocked": increment_unlocked, "candidate": increment_candidate}

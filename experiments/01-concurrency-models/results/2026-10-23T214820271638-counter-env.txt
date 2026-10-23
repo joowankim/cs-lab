@@ -1,0 +1,72 @@
+{
+  "started_at": "2026-10-23T21:48:20.271638+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "race",
+  "command": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpH2vQ05/environments-v2/counter-lab-24af8cea0a9d4372/bin/python python/counter_lab.py --cases unlocked candidate",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/private/var/folders/0g/427n8hjn3n95dr051s6zm5fr0000gn/T/.tmpH2vQ05/environments-v2/counter-lab-24af8cea0a9d4372/bin/python",
+  "resolved_executable": "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+  "base_prefix": "/opt/homebrew/opt/python@3.14/Frameworks/Python.framework/Versions/3.14",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "gil_configuration": {
+    "PYTHON_GIL": null,
+    "xoption_gil": null
+  },
+  "config": {
+    "cases": [
+      "unlocked",
+      "candidate"
+    ],
+    "workers": 2,
+    "increments": 1,
+    "trials": 100,
+    "yield_between": true,
+    "expect_gil": "on",
+    "output_dir": null,
+    "smoke": false
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "17b6317543aa8833a1ed3d30b73136b2fc2aa7b8",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n M README.md\n M python/counter_kernels.py\n M python/models.py\n?? results/2026-10-23T194814493154-benchmark-cpu-context.txt\n?? results/2026-10-23T194814493154-benchmark-env.txt\n?? results/2026-10-23T194814493154-benchmark-python-3.14.2-gil-on.jsonl\n?? results/2026-10-23T202015603142-benchmark-cpu-context.txt\n?? results/2026-10-23T202015603142-benchmark-env.txt\n?? results/2026-10-23T202015603142-benchmark-python-3.14.2-gil-on.jsonl\n?? results/2026-10-23T205541738504-gil-compare-benchmark-cpu-context.txt\n?? results/2026-10-23T205541738504-gil-compare-benchmark-env.txt\n?? results/2026-10-23T205541738504-gil-compare-benchmark-python-3.14.2t.jsonl\n?? results/2026-10-23T211420698267-gil-compare-benchmark-cpu-context.txt\n?? results/2026-10-23T211420698267-gil-compare-benchmark-env.txt\n?? results/2026-10-23T211420698267-gil-compare-benchmark-python-3.14.2t.jsonl\n?? results/traces/\n?? results/validation/2026-10-23T194730696419-smoke-env.txt\n?? results/validation/2026-10-23T194730696419-smoke-python-3.14.2-gil-on.jsonl\n?? results/validation/2026-10-23T201901825518-smoke-env.txt\n?? results/validation/2026-10-23T201901825518-smoke-python-3.14.2-gil-on.jsonl\n?? results/validation/2026-10-23T205416949854-gil-compare-smoke-env.txt\n?? results/validation/2026-10-23T205416949854-gil-compare-smoke-python-3.14.2t.jsonl\n?? results/validation/2026-10-23T211241055451-gil-compare-smoke-env.txt\n?? results/validation/2026-10-23T211241055451-gil-compare-smoke-python-3.14.2t.jsonl\n?? results/validation/2026-10-23T214122210588-counter-smoke-env.txt\n?? results/validation/2026-10-23T214122210588-counter-smoke-python-3.14.2.jsonl",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "counter_lab.py": "2c24d906647611f0fb2fc35d27f9c58e7d41a274998edfbc30b60784b65f0a3c",
+    "counter_kernels.py": "3556d08ed2808397498a81322ca53ddb81504ac869b9f2928a0e80b0c6ad93cc",
+    "bench.py": "dbeb6fb915e6bb70eb6dca480fe016a8118b79626bc1cc95e1e25466a0fa79d3",
+    "models.py": "f376b09bea513e54fac145fb56a8461d772ada6a0f3bfff10f4cb440efa7441e",
+    "workloads.py": "73b03fa986b2cc7ab6abe873682c77e53bfa0a7e87817425dfc7166bae20ef74"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22675555)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "scenario": "counter",
+  "validation": false
+}
