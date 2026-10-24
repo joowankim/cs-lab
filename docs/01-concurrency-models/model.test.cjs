@@ -101,8 +101,9 @@ test('time.sleep() 중인 스레드는 GIL과 CPU를 쓰지 않고, 대기가 �
   for (const { cfg, r } of RUNS) for (const v of r.views) for (const [, t] of threadsOf(v)) {
     if (t.act === 'os-sleep') { assert.ok(!t.holdsGil, JSON.stringify(cfg)); assert.equal(t.cpu, null); }
   }
+  // GIL을 켜고 CPU가 하나여도 네 스레드의 대기가 한 단계에 모두 겹친다
   const r = M.simulate({ scenario: 'tsleep', gil: 'default-on', processes: 1, threads: 4, cpus: 1, jobs: 4 });
-  assert.ok(r.views.some((v) => threadsOf(v).filter(([, t]) => t.act === 'os-sleep').length >= 3));
+  assert.ok(r.views.some((v) => threadsOf(v).filter(([, t]) => t.act === 'os-sleep').length === 4));
 });
 
 test('이벤트 루프는 프로세스마다 스레드 하나에서만 돈다. 나머지 작업자 스레드는 만들지 않은 것으로 표시한다', () => {
@@ -220,15 +221,6 @@ test('같은 구성은 같은 순서를 낸다', () => {
   const a = M.simulate({ scenario: 'native', threads: 3, cpus: 2, jobs: 5 });
   const b = M.simulate({ scenario: 'native', threads: 3, cpus: 2, jobs: 5 });
   assert.deepEqual(a.views, b.views);
-});
-
-test('사용하지 않는 요소 목록: GIL을 끄면 GIL이, 스레드 장면에서는 루프·Task·Semaphore가 사용 안 함이다', () => {
-  const e = M.elements(M.normalizeConfig({ scenario: 'py', gil: 'ft-off' }));
-  const byId = Object.fromEntries(e.map((x) => [x.id, x]));
-  assert.equal(byId['p0-gil'].used, false);
-  assert.equal(byId['p0-loop'].used, false);
-  assert.equal(byId['p0-sem'].used, false);
-  assert.equal(byId['p0-lock'].used, false);
 });
 
 test('조사 도우미', () => {

@@ -1,18 +1,23 @@
 /*
- * 동시성 관계도 시험판: 위에는 전체 지도 하나, 아래에는 고른 장면의 관계도.
- * 세 장면 모두 model.js가 만든 단계 기록을 그대로 그린다. 장면마다 그 장면에 필요한 요소만 그리고,
+ * 동시성 관계도: 위에는 전체 지도 하나, 아래에는 고른 장면의 관계도.
+ * 모든 장면은 model.js가 만든 단계 기록을 그대로 그린다. 장면마다 그 장면에 필요한 요소만 그리고,
  * 같은 요소는 지도와 장면에서 같은 모양으로 그린다(CPU 칩, 스레드 원, GIL 꼬리표, Task 알약, 객체 상자).
- * 스레드의 실행 여부(채움, CPU 선)는 그 단계 동안의 상태이고, 값과 자원(counter, previous, Lock, GIL,
+ * 스레드의 실행 여부(채움, CPU 선)는 그 단계 동안의 상태이고, 값과 자원(작업 진행, counter, previous, Lock, GIL,
  * Task가 놓인 칸과 알약 모양, 타이머, Semaphore를 얻은 Task)은 그 단계가 끝난 뒤의 상태다.
  * 연결선은 두 끝에서 세로로 나가고 들어오는 곡선으로 그린다.
  * 그림 요소마다 뜻은 하나다: 테두리 상자는 무엇이 무엇 안에 있는지, 옅은 칸은 Task가 머무는 곳, 모양은 종류, 채움과 점선은 실행 상태.
+ * 관계도의 요소를 고르면 설명 칸에 그 요소의 개념, 지금 상태, 근거가 나온다.
  * 단계는 이벤트의 순서이고 시간 길이가 아니다.
+ *
+ * 장면을 더하려면 SCENES에 항목을 더하고, content.js의 SCENES에 같은 이름으로 질문, 볼 것, 실측 기록, 근거를 적는다.
+ * kind는 그리는 방식이다(worker: 작업자 스레드나 프로세스, counter: 공유 카운터, loop: 이벤트 루프).
+ * 새 kind를 쓰려면 배치, 그리기, 단계 띠, 코드, 설명 문장 함수에 그 kind를 더한다.
  */
 (function () {
   'use strict';
 
   const M = window.RuntimeModel;
-  const RC = window.RuntimeContent || { SCENES: {}, CODE: {} };
+  const RC = window.RuntimeContent || { SCENES: {}, CODE: {}, ELEMENTS: {}, UNUSED: {}, EV: {}, CARDS: {}, TYPE_LABEL: {} };
   const $ = (s) => document.querySelector(s);
   const NS = 'http://www.w3.org/2000/svg';
   const motionOff = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -20,11 +25,47 @@
   const SPEEDS = [{ label: '느리게', ms: 2000 }, { label: '보통', ms: 1200 }, { label: '빠르게', ms: 600 }];
   const MOVE_MS = 280;
   const SCENE_KEY = 'runtime-board-scene';
+  const DEFAULT_SCENE = 'py';
+  // 작업자 장면에서 프로세스 칸 하나의 가장 좁은 너비. 관계도가 이보다 좁아지면 줄이지 않고 관계도 칸 안에서 옆으로 밀어 보게 한다.
+  const SLOT_MIN = 100;
 
-  // 장면마다 고정하는 구성(base), 처음 구성(start), 바꿀 수 있는 범위(range, 모형의 한도보다 좁다),
-  // 전체 지도에서 진하게 그릴 부분(parts)을 둔다. 루프 장면은 실험처럼 OS 스레드 하나에서 루프를 돌린다.
+  // 장면마다 그리는 방식(kind), 장면 버튼 무리(group), 고정하는 구성(base), 처음 구성(start), 바꿀 수 있는 범위(range, 모형의 한도보다 좁다),
+  // 전체 지도에서 진하게 그릴 부분(parts)을 둔다. 작업자 장면은 실행 방식(mode)에 따라 작업자(workers)를 스레드나 프로세스로 만든다.
+  // 루프 장면은 실험처럼 OS 스레드 하나에서 루프를 돌린다.
   const SCENES = {
+    py: {
+      kind: 'worker',
+      group: 'threads',
+      label: 'Python 계산',
+      base: { scenario: 'py' },
+      start: { mode: 'threads', workers: 2, cpus: 2, jobs: 2 },
+      range: { workers: [1, 4], cpus: [1, 4], jobs: [1, 8] },
+      guessKey: 'runtime-board-py-guess',
+      parts: ['cpu', 'gil', 'th0', 'th1', 'th2'],
+    },
+    native: {
+      kind: 'worker',
+      group: 'threads',
+      label: '네이티브 계산',
+      base: { scenario: 'native' },
+      start: { mode: 'threads', workers: 2, cpus: 2, jobs: 2 },
+      range: { workers: [1, 4], cpus: [1, 4], jobs: [1, 8] },
+      guessKey: 'runtime-board-native-guess',
+      parts: ['cpu', 'gil', 'th0', 'th1', 'th2'],
+    },
+    tsleep: {
+      kind: 'worker',
+      group: 'threads',
+      label: 'time.sleep() 대기',
+      base: { scenario: 'tsleep' },
+      start: { mode: 'threads', workers: 4, cpus: 2, jobs: 4 },
+      range: { workers: [1, 4], cpus: [1, 4], jobs: [1, 8] },
+      guessKey: 'runtime-board-tsleep-guess',
+      parts: ['cpu', 'gil', 'th0', 'th1', 'th2'],
+    },
     counter: {
+      kind: 'counter',
+      group: 'threads',
       label: '공유 카운터와 Lock',
       base: { scenario: 'counter', processes: 1 },
       start: {},
@@ -33,6 +74,8 @@
       parts: ['cpu', 'gil', 'th0', 'th1', 'th2', 'counter', 'lock'],
     },
     loop: {
+      kind: 'loop',
+      group: 'asyncio',
       label: '루프 지연',
       base: { scenario: 'loop', processes: 1, threads: 1 },
       start: { cpus: 2, loopAction: 'blocking' },
@@ -41,6 +84,8 @@
       parts: ['cpu', 'gil', 'th0', 'link', 'loop', 'task'],
     },
     sem: {
+      kind: 'loop',
+      group: 'asyncio',
       label: 'Task와 Semaphore',
       base: { scenario: 'sem', processes: 1, threads: 1 },
       start: { cpus: 2, jobs: 4, semaphore: 2 },
@@ -49,19 +94,22 @@
       parts: ['cpu', 'gil', 'th0', 'link', 'loop', 'task', 'sem'],
     },
   };
-  const STEPPERS = { threads: '스레드', cpus: '논리 CPU', jobs: '작업 수' };
+  const GROUPS = [['threads', '스레드와 프로세스'], ['asyncio', 'asyncio']];
+  // 작업자 수의 이름은 실행 방식에 따라 스레드나 프로세스로 바꿔 적는다.
+  const STEPPERS = { workers: '작업자', threads: '스레드', cpus: '논리 CPU', jobs: '작업 수' };
 
   // 띠 칸에 적는 글자: 그 단계에 실행한 연산
   const OP_MARK = { read: '읽', write: '쓰', yield0: '0', lockAcquire: '잠', lockRelease: '풀' };
   const TASK_MARK = { spawn: '생', asleep: '타', record: '기', semAcquire: '얻', exitSem: '반' };
   // 설명 한 문장으로 고를 이벤트의 순서
   const PRIORITY = {
+    worker: ['gil-release', 'gil-request', 'native-done', 'wake', 'gil-take', 'done', 'end', 'start'],
     counter: ['lost', 'write', 'read', 'lock-wait', 'lock-take', 'lock-release', 'gil-request', 'gil-release', 'gil-take', 'done', 'end', 'start'],
     loop: ['late', 'thread-block', 'spawn', 'sem-wait', 'sem-pass', 'task-suspend', 'record', 'sem-enter', 'sem-release', 'task-done',
       'task-ready', 'wake', 'loop-idle', 'loop-run', 'timer', 'done', 'gil-request', 'gil-release', 'gil-take', 'end', 'start'],
   };
 
-  let scene = 'counter';
+  let scene = DEFAULT_SCENE;
   const cfgs = {};
   let cfg = null;
   let run = null;
@@ -72,6 +120,9 @@
   let timer = null;
   let geo = null;
   let codeSig = null;
+  // 설명 칸에 보이는 요소(model.js의 요소 이름)와, 고정된 설명을 마지막으로 채운 요소
+  let selected = null;
+  let detailsFor = null;
 
   const store = {
     get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
@@ -97,14 +148,24 @@
     if (parent) parent.appendChild(n);
     return n;
   }
-  function isLoop() { return scene !== 'counter'; }
+  function kind() { return SCENES[scene].kind; }
+  function isLoop() { return kind() === 'loop'; }
+  function isWorker() { return kind() === 'worker'; }
   function view() { return run.views[idx]; }
-  function proc() { return run.state.procs[0]; }
-  function threadIds() { return proc().threads.map((t) => t.id); }
+  function procs() { return run.state.procs; }
+  function proc() { return procs()[0]; }
+  function pidOf(id) { return id.split('-')[0]; }
+  function procOf(id) { return procs()[+pidOf(id).slice(1)]; }
+  // 모든 프로세스의 스레드를 프로세스 순서대로 늘어놓는다. 관계도의 스레드 자리(thX, thBox)도 이 순서다.
+  function threadIds() { return procs().flatMap((p) => p.threads.map((t) => t.id)); }
+  function stateThread(id) { return procOf(id).threads.find((t) => t.id === id); }
   function loopThread() { return proc().threads[0]; }
   function lastIdx() { return run.views.length - 1; }
+  // GIL을 쓰는 구성인지. 빌드와 GIL 설정으로 정해지므로 한 구성 안에서는 바뀌지 않는다.
+  function gilUsed() { return M.GIL_MODES[cfg.gil].active; }
+  function unusedThread(id) { return run.views[0].threads[id].act === 'unused'; }
 
-  // 스레드 상태는 넷으로 줄인다. 기다릴 때만 이유를 한 낱말로 붙인다.
+  // 스레드 상태는 넷으로 줄인다. 기다릴 때만 이유를 한 낱말로 붙인다. 작업이 없어 쓰지 않는 스레드는 따로 흐리게 그린다.
   function stateOf(t) {
     switch (t.act) {
       case 'run-py': case 'run-native': return { cls: 'run', name: '실행 중', why: '' };
@@ -115,8 +176,39 @@
       case 'os-sleep': return { cls: 'event', name: '이벤트 기다림', why: 'sleep 대기' };
       case 'loop-idle': return { cls: 'event', name: '이벤트 기다림', why: '타이머까지 대기' };
       case 'done': return { cls: 'done', name: '끝', why: '끝' };
+      case 'unused': return { cls: 'unused', name: '작업 없음', why: '작업 없음' };
       default: return { cls: 'turn', name: '차례 기다림', why: '' };
     }
+  }
+
+  // 상태 이름과 기다리는 이유. 이유가 상태 이름과 같으면(끝, 작업 없음) 한 번만 적는다.
+  function stateText(st) { return `${st.name}${st.why && st.why !== st.name ? ` (${st.why})` : ''}`; }
+
+  // 설명 칸에 적는 스레드 상태. 관계도보다 자세히 적는다.
+  function actLabel(t) {
+    switch (t.act) {
+      case 'run-py': return gilUsed() ? 'CPU에서 Python 실행 · GIL 쥠' : 'CPU에서 Python 실행 · GIL 끔';
+      case 'run-native': return 'CPU에서 네이티브 계산 · GIL 없이 실행';
+      case 'cpu-wait': return t.holdsGil ? 'GIL을 쥐고 CPU 배정을 기다림' : '실행할 수 있음 · CPU 배정을 기다림';
+      case 'gil-wait': return 'GIL 획득을 기다림';
+      case 'os-sleep': return 'time.sleep() 안에서 OS 대기';
+      case 'lock-wait': return 'Lock 획득을 기다림';
+      case 'loop-idle': return '다음 타이머까지 OS 대기';
+      case 'done': return '끝';
+      case 'start': return '시작 전';
+      default: return '작업 없음';
+    }
+  }
+
+  // 작업자 스레드가 단계 끝에 하고 있는 작업과 그 작업의 진행. 작업마다 단위 수가 같으므로 스레드 전체 진행에서 나눠 얻는다.
+  // 단위는 모형의 단계 수이고 시간이 아니다. 맡은 작업을 모두 마쳤으면 null이다.
+  function jobNow(id, v) {
+    const th = stateThread(id);
+    const pr = v.after.progress[id];
+    if (!pr || !th.jobs.length || pr.done >= pr.total) return null;
+    const unit = pr.total / th.jobs.length;
+    const k = Math.floor(pr.done / unit);
+    return { job: th.jobs[k], done: pr.done - k * unit, total: unit };
   }
 
   // 이 단계에 루프 스레드가 이 Task의 코드를 실행했는지
@@ -186,26 +278,71 @@
     return { per, max, tasks: proc().loop.tasks.map((t) => t.id) };
   }
 
+  // ---------- 요소 이름과 고르기 ----------
+
+  function typeOf(id) {
+    if (/^cpu-\d+$/.test(id)) return 'cpu';
+    if (/^p\d+$/.test(id)) return 'process';
+    if (/^p\d+-t\d+$/.test(id)) return 'thread';
+    const suf = id.slice(pidOf(id).length + 1);
+    return { interp: 'interp', gil: 'gil', loop: 'loop', sem: 'sem', counter: 'counter', lock: 'lock' }[suf] || 'task';
+  }
+
+  function nameOf(id) {
+    const type = typeOf(id);
+    if (type === 'cpu') return `CPU ${+id.slice(4) + 1}`;
+    if (type === 'process') return `프로세스 ${+id.slice(1) + 1}`;
+    if (type === 'thread') return `스레드 ${short(id)}`;
+    if (type === 'task') return taskLabel(id);
+    const name = { interp: '인터프리터', gil: 'GIL', loop: '이벤트 루프', sem: 'Semaphore', counter: 'counter', lock: 'Lock' }[type];
+    return procs().length > 1 ? `${name} (프로세스 ${+pidOf(id).slice(1) + 1})` : name;
+  }
+
+  // 고를 수 있는 요소. 누르거나 Tab으로 옮겨 Enter를 누르면 설명 칸에 그 요소의 설명이 나온다.
+  // 한 요소를 도형 여러 개로 그리면(스레드 상자와 원, GIL 자리와 꼬리표) 하나만 Tab으로 옮겨 갈 수 있게 한다.
+  function selAttrs(id, focus) {
+    const a = { 'data-sel': id };
+    if (focus !== false) Object.assign(a, { tabindex: '0', role: 'button', 'aria-label': nameOf(id) });
+    return a;
+  }
+
+  // 상태에 따라 class를 바꿔도 고른 요소 표시(sel)는 남긴다.
+  function setCls(node, cls) {
+    node.setAttribute('class', node.dataset.sel != null && node.dataset.sel === selected ? `${cls} sel` : cls);
+  }
+
+  function markSelected() {
+    const svg = $('#board');
+    svg.querySelectorAll('.sel').forEach((n) => n.classList.remove('sel'));
+    if (selected) svg.querySelectorAll(`[data-sel="${selected}"]`).forEach((n) => n.classList.add('sel'));
+  }
+
   // ---------- 공통 그림 ----------
 
   function drawFrame(svg, g) {
-    // CPU는 프로세스 바깥 위쪽에 한 줄로 둔다. 스레드와 다른 모양(사각 칩)이다.
+    // CPU는 프로세스 바깥 위쪽에 한 줄로 둔다. 스레드와 다른 모양(사각 칩)이다. 프로세스가 여럿이어도 CPU는 함께 쓴다.
     const cpus = el('g', { class: 'cpus' }, svg);
     g.cpuX.forEach((x, i) => {
-      const c = el('g', { class: 'cpu', 'data-cpu': i }, cpus);
+      const c = el('g', Object.assign({ class: 'cpu', 'data-cpu': i }, selAttrs(`cpu-${i}`)), cpus);
       el('rect', { x: x - g.chipW / 2, y: g.chipY, width: g.chipW, height: g.chipH, rx: 6 }, c);
       el('text', { x, y: g.chipY + 19, 'text-anchor': 'middle' }, c, `CPU ${i + 1}`);
     });
-    // 프로세스는 옅은 바탕, 인터프리터는 그 위에 놓인 흰 바탕이다.
-    el('rect', { class: 'box proc', x: g.m, y: g.procY, width: g.W - 2 * g.m, height: g.procB - g.procY, rx: 12 }, svg);
-    el('text', { class: 'lbl', x: g.m + 10, y: g.procB - 7 }, svg, '프로세스 1');
-    el('rect', { class: 'box interp', x: g.mi, y: g.interpY, width: g.W - 2 * g.mi, height: g.interpB - g.interpY, rx: 10 }, svg);
-    el('text', { class: 'lbl', id: 'interpLbl', x: g.mi + 10, y: g.interpB - 7 }, svg, '인터프리터');
-    // 스레드마다 테두리 상자 하나에 원과 그 스레드만 쓰는 것(쥔 GIL, 기다리는 이유, 지역 변수)을 담는다.
+    // 프로세스는 옅은 바탕, 인터프리터는 그 위에 놓인 흰 바탕이다. 프로세스가 여럿이면 같은 너비의 칸에 나란히 둔다.
+    for (const s of g.slots) {
+      const pg = el('g', selAttrs(`p${s.p}`), svg);
+      el('rect', { class: 'box proc', x: s.px, y: g.procY, width: s.pw, height: g.procB - g.procY, rx: 12 }, pg);
+      el('text', { class: 'lbl', x: s.px + 10, y: g.procB - 7 }, pg, `프로세스 ${s.p + 1}`);
+      const ig = el('g', selAttrs(`p${s.p}-interp`), svg);
+      el('rect', { class: 'box interp', x: s.ix, y: g.interpY, width: s.iw, height: g.interpB - g.interpY, rx: 10 }, ig);
+      el('text', { class: 'lbl interp-lbl', 'data-p': s.p, x: s.ix + 10, y: g.interpB - 7 }, ig, '인터프리터');
+    }
+    // 스레드마다 테두리 상자 하나에 원과 그 스레드만 쓰는 것(쥔 GIL, 기다리는 이유, 지역 변수나 맡은 작업)을 담는다.
     // 스레드들이 함께 쓰는 객체(counter, Lock, 이벤트 루프, Semaphore)는 상자 밖, 인터프리터 안에 둔다.
+    const ids = threadIds();
     const boxes = el('g', { class: 'thboxes' }, svg);
     g.thBox.forEach((b, i) => {
-      el('rect', { class: 'thbox', 'data-th': i, x: b.x, y: b.y, width: b.w, height: b.h, rx: 8 }, boxes);
+      const cls = unusedThread(ids[i]) ? 'thbox unused' : 'thbox';
+      el('rect', Object.assign({ class: cls, 'data-th': i, x: b.x, y: b.y, width: b.w, height: b.h, rx: 8 }, selAttrs(ids[i], false)), boxes);
       if (g.thLabel) el('text', { class: 'lbl', x: b.x + 10, y: b.y + 17 }, boxes, '스레드');
     });
     g.laneG = el('g', { class: 'lanes' }, svg);
@@ -233,7 +370,7 @@
     const ths = el('g', { class: 'threads' }, svg);
     threadIds().forEach((id, i) => {
       const x = g.thX[i];
-      const t = el('g', { class: 'th', 'data-id': id }, ths);
+      const t = el('g', Object.assign({ class: 'th', 'data-id': id }, selAttrs(id)), ths);
       el('circle', { cx: x, cy: g.thY, r: g.r }, t);
       el('text', { class: 'name', x, y: g.thY + 5, 'text-anchor': 'middle' }, t, short(id));
       if (g.whyX != null) el('text', { class: 'why', x: g.whyX, y: g.thY + 4 }, t, '');
@@ -245,20 +382,22 @@
     });
   }
 
-  // GIL을 쓰는 구성인지. 빌드와 GIL 설정으로 정해지므로 한 구성 안에서는 바뀌지 않는다.
-  function gilUsed() { return run.views.some((v) => v.gil[proc().id].active); }
-
   function drawGil(svg, g) {
-    // GIL은 인터프리터마다 꼬리표 하나다. 비어 있으면 인터프리터 왼쪽 위의 GIL 자리(점선 테두리)에, 쥔 스레드가 있으면 그 스레드 상자 안 원 곁에 둔다.
-    if (g.gilOn) {
-      const home = el('rect', { class: 'gil-home', x: g.home.x - g.bw / 2, y: g.home.y - g.bh / 2, width: g.bw, height: g.bh, rx: 6 }, svg);
+    // GIL은 인터프리터마다 꼬리표 하나다. 비어 있으면 그 인터프리터의 GIL 자리(점선 테두리)에, 쥔 스레드가 있으면 그 스레드 상자 안 원 곁에 둔다.
+    // GIL을 끈 구성에는 꼬리표도 자리도 없다.
+    if (!g.gilOn) return;
+    for (const s of g.slots) {
+      const home = el('rect', Object.assign({ class: 'gil-home', 'data-p': s.p, x: s.home.x - g.bw / 2, y: s.home.y - g.bh / 2, width: g.bw, height: g.bh, rx: 6 },
+        selAttrs(`p${s.p}-gil`, false)), svg);
       el('title', {}, home, 'GIL 자리: GIL을 쥔 스레드가 없으면 꼬리표가 여기로 돌아온다');
     }
-    const gil = el('g', { class: 'gil free', id: 'gilTag' }, svg);
-    el('rect', { x: -g.bw / 2, y: -g.bh / 2, width: g.bw, height: g.bh, rx: 6 }, gil);
-    el('text', { x: 0, y: 4, 'text-anchor': 'middle' }, gil, 'GIL');
-    el('text', { class: 'req', x: g.bw / 2 + 4, y: 4 }, gil, '');
-    setPos(gil, g.home, true);
+    for (const s of g.slots) {
+      const gil = el('g', Object.assign({ class: 'gil free', 'data-p': s.p }, selAttrs(`p${s.p}-gil`)), svg);
+      el('rect', { x: -g.bw / 2, y: -g.bh / 2, width: g.bw, height: g.bh, rx: 6 }, gil);
+      el('text', { x: 0, y: 4, 'text-anchor': 'middle' }, gil, 'GIL');
+      el('text', { class: 'req', x: g.bw / 2 + 4, y: 4 }, gil, '');
+      setPos(gil, s.home, true);
+    }
   }
 
   // 요소를 새 자리로 옮긴다. 여러 단계를 건너뛰거나 처음 보일 때는 옮겨 가는 모습 없이 바로 둔다.
@@ -315,30 +454,43 @@
     for (const id of threadIds()) {
       const st = stateOf(v.threads[id]);
       const node = $('#board').querySelector(`.th[data-id="${id}"]`);
-      node.setAttribute('class', `th ${st.cls}`);
+      setCls(node, `th ${st.cls}`);
       node.querySelector('.why').textContent = st.cls === 'run' ? '' : st.why;
     }
   }
 
+  // 쥔 스레드에 해제 요청이 표시돼 있는지. 이 단계 끝에 요청했거나, 전에 받은 요청을 아직 처리하지 않았다.
+  function gilRequested(v, pid) {
+    const holder = v.after.gil[pid];
+    return holder != null && (v.events.some((e) => e.type === 'gil-request' && e.ids.includes(`${pid}-gil`))
+      || (holder === v.gil[pid].holder && v.threads[holder].dropRequested));
+  }
+
   function renderGil(v, animate) {
     const g = geo;
-    const pid = proc().id;
-    const gv = v.gil[pid];
-    const tag = $('#gilTag');
-    $('#interpLbl').textContent = gv.active ? '인터프리터' : '인터프리터 · GIL 끔';
-    tag.style.display = gv.active ? '' : 'none';
-    if (!gv.active) return;
-    const holder = v.after.gil[pid];
-    const req = holder != null && (v.events.some((e) => e.type === 'gil-request')
-      || (holder === gv.holder && v.threads[holder].dropRequested));
-    tag.setAttribute('class', `gil${holder ? '' : ' free'}`);
-    tag.querySelector('.req').textContent = req ? '요청' : '';
-    const k = holder ? threadIds().indexOf(holder) : -1;
-    setPos(tag, k < 0 ? g.home : g.gilAt ? g.gilAt : { x: g.thX[k], y: g.gilY }, !animate);
+    const svg = $('#board');
+    const ids = threadIds();
+    for (const s of g.slots) {
+      const pid = `p${s.p}`;
+      svg.querySelector(`.interp-lbl[data-p="${s.p}"]`).textContent = v.gil[pid].active ? '인터프리터' : g.interpOff;
+      const tag = svg.querySelector(`.gil[data-p="${s.p}"]`);
+      if (!tag) continue;
+      const holder = v.after.gil[pid];
+      const req = gilRequested(v, pid);
+      setCls(tag, `gil${holder ? '' : ' free'}`);
+      // 해제 요청은 꼬리표 오른쪽에 적는다. 스레드 상자가 좁아 들어가지 않으면 비어 있는 이유 자리에 적는다.
+      tag.querySelector('.req').textContent = req && g.reqRoom ? '요청' : '';
+      if (req && !g.reqRoom) {
+        const why = svg.querySelector(`.th[data-id="${holder}"] .why`);
+        if (!why.textContent) why.textContent = '해제 요청';
+      }
+      const k = holder ? ids.indexOf(holder) : -1;
+      setPos(tag, k < 0 ? s.home : g.gilAt ? g.gilAt : { x: g.thX[k], y: g.gilY }, !animate);
+    }
   }
 
   function buildBoard() {
-    geo = isLoop() ? layoutLoop() : layoutCounter();
+    geo = isLoop() ? layoutLoop() : isWorker() ? layoutWorkers() : layoutCounter();
     const g = geo;
     const svg = $('#board');
     svg.innerHTML = '';
@@ -347,15 +499,92 @@
     svg.style.maxWidth = g.scroll ? 'none' : '';
     svg.classList.toggle('compact', g.compact);
     svg.classList.toggle('stack', g.localMode === 'stack');
-    if (isLoop()) buildLoop(svg, g); else buildCounter(svg, g);
+    svg.classList.toggle('worker', isWorker());
+    if (isLoop()) buildLoop(svg, g); else if (isWorker()) buildWorkers(svg, g); else buildCounter(svg, g);
   }
 
   function renderBoard(v, animate) {
     $('#board').classList.toggle('instant', !animate);
     renderCpuLinks(v, animate);
     renderThreadState(v);
-    if (isLoop()) renderLoop(v, animate); else renderCounter(v, animate);
+    if (isLoop()) renderLoop(v, animate); else if (isWorker()) renderWorkers(v); else renderCounter(v, animate);
     renderGil(v, animate);
+    markSelected();
+  }
+
+  // ---------- 작업자 장면 (Python 계산, 네이티브 계산, time.sleep() 대기) ----------
+
+  // 프로세스마다 같은 너비의 칸을 나란히 두고, 칸마다 프로세스, 인터프리터, 스레드 상자를 그린다.
+  // 프로세스 하나일 때 스레드 상자의 자리는 공유 카운터 장면과 같다. 빈 GIL 자리는 스레드 상자 아래, 인터프리터 왼쪽 아래에 둔다.
+  // CPU 선은 스레드 원 위에서 끝나므로 원보다 아래에 둔 것과는 겹치지 않는다. 프로세스가 여럿이면 CPU 선이 다른 프로세스 칸의 위쪽을
+  // 지나가므로 GIL 자리를 위에 둘 수 없다.
+  function layoutWorkers() {
+    const P = cfg.processes;
+    const T = cfg.threads;
+    const C = cfg.cpus;
+    const avail = Math.floor($('#boardWrap').clientWidth) || 600;
+    const W = Math.max(260, P === 1 ? 24 + (T + 1) * 60 : P * SLOT_MIN, Math.min(600, avail));
+    // 프로세스 칸이 좁으면 관계도가 넓어도 좁은 화면의 간격과 글자 크기를 쓴다. 그래야 기다리는 이유가 스레드 상자 안에 들어간다.
+    const compact = W < 480 || W / P < 140;
+    const m = compact ? 4 : 8;
+    const mi = compact ? 12 : 24;
+    const g = { W, compact, scroll: W > avail + 1, m, mi, chipY: 12, chipH: 28, procY: 56, interpY: 80, r: compact ? 18 : 22,
+      bw: compact ? 36 : 44, bh: 20 };
+    g.gilOn = gilUsed();
+    const thTop = g.interpY + 12;
+    g.thY = thTop + 10 + g.r;
+    g.gilY = g.thY + g.r + 14;
+    g.whyY = g.gilY + 27;
+    g.localY = g.whyY + 16;
+    // 스레드 상자는 프로세스 칸 안에 같은 너비로 나란히 둔다. 상자가 좁으면 "작업 1 · 2/4"를 줄여 적거나 두 줄로 나눈다.
+    const slotW = W / P;
+    const inset = mi + (compact ? 6 : 12);
+    const ow = slotW - 2 * inset;
+    const sep = compact ? 6 : 10;
+    const col = (ow + sep) / T;
+    const boxW = Math.min(col - sep, 168);
+    g.localMode = boxW >= 100 ? 'full' : boxW >= 84 ? 'tight' : 'stack';
+    g.refY = g.localY + 9 + (g.localMode === 'stack' ? 14 : 0);
+    g.thX = [];
+    g.slots = [];
+    for (let p = 0; p < P; p++) {
+      const sx = p * slotW;
+      const ox = sx + inset;
+      for (let i = 0; i < T; i++) g.thX.push(ox + col * i + (col - sep) / 2);
+      g.slots.push({ p, px: sx + m, pw: slotW - 2 * m, ix: sx + mi, iw: slotW - 2 * mi, home: { x: ox + g.bw / 2, y: g.refY + 10 + g.bh / 2 } });
+    }
+    g.thBox = g.thX.map((x) => ({ x: x - boxW / 2, y: thTop, w: boxW, h: g.refY - thTop }));
+    // 상자 이름 "스레드"는 원 왼쪽에 들어갈 때만 적는다.
+    g.thLabel = boxW / 2 - g.r - 14 >= 36;
+    g.reqRoom = boxW / 2 - g.bw / 2 >= 28;
+    g.interpB = (g.gilOn ? g.refY + 10 + g.bh : g.refY) + 26;
+    g.procB = g.interpB + 22;
+    g.H = g.procB + 6;
+    const cpuStep = (W - 2 * m) / (C + 1);
+    g.cpuX = Array.from({ length: C }, (_, i) => m + cpuStep * (i + 1));
+    g.chipW = Math.min(72, cpuStep - 8);
+    // GIL 끔은 인터프리터 이름 옆에 적는다. 프로세스 칸이 좁으면 이름만 적고, 개수 표의 GIL 줄과 설명 칸에서 본다.
+    g.interpOff = slotW - 2 * mi >= 132 ? '인터프리터 · GIL 끔' : '인터프리터';
+    return g;
+  }
+
+  function buildWorkers(svg, g) {
+    drawFrame(svg, g);
+    drawCpuLinks(svg, g);
+    drawThreads(svg, g, true);
+    drawGil(svg, g);
+  }
+
+  // 스레드 상자 아래에 단계 끝에 하고 있는 작업과 그 작업을 몇 단위 했는지 적는다. 맡은 작업을 다 마친 스레드에는 적지 않는다.
+  function renderWorkers(v) {
+    const g = geo;
+    const svg = $('#board');
+    for (const id of threadIds()) {
+      const node = svg.querySelector(`.th[data-id="${id}"]`);
+      const j = jobNow(id, v);
+      node.querySelector('.lname').textContent = !j ? '' : { full: `작업 ${j.job + 1} · `, tight: `작업${j.job + 1} `, stack: `작업 ${j.job + 1}` }[g.localMode];
+      node.querySelector('.lval').textContent = j ? `${j.done}/${j.total}` : '';
+    }
   }
 
   // ---------- 공유 카운터 장면 ----------
@@ -395,6 +624,7 @@
     g.thBox = g.thX.map((x) => ({ x: x - boxW / 2, y: thTop, w: boxW, h: g.refY - thTop }));
     // 상자 이름 "스레드"는 원 왼쪽에 들어갈 때만 적는다.
     g.thLabel = boxW / 2 - g.r - 14 >= 36;
+    g.reqRoom = boxW / 2 - g.bw / 2 >= 28;
     // counter로 가는 곡선이 너무 납작하지 않도록 세로 간격을 둔다.
     g.cTop = g.refY + 40;
     g.interpB = g.cTop + g.cH + 26;
@@ -423,6 +653,8 @@
     // 빈 GIL은 인터프리터 왼쪽 위에 둔다. 왼쪽 끝을 스레드 상자와 맞추되, 가장 왼쪽 CPU 선보다 더 왼쪽에 두어 선과 겹치지 않게 한다.
     const lineMin = Math.min(g.cpuX[0], g.thX[0]);
     g.home = { x: Math.max(mi + 4 + g.bw / 2, Math.min(ox + g.bw / 2, lineMin - 6 - g.bw / 2)), y: g.interpY + 20 };
+    g.slots = [{ p: 0, px: m, pw: W - 2 * m, ix: mi, iw: W - 2 * mi, home: g.home }];
+    g.interpOff = '인터프리터 · GIL 끔';
     return g;
   }
 
@@ -445,14 +677,15 @@
     drawCpuLinks(svg, g);
     drawThreads(svg, g, true);
 
-    const c = el('g', { class: 'counter', id: 'counterNode' }, svg);
+    const pid = proc().id;
+    const c = el('g', Object.assign({ class: 'counter', id: 'counterNode' }, selAttrs(`${pid}-counter`)), svg);
     el('rect', { x: g.cX, y: g.cTop, width: g.cW, height: g.cH, rx: 8 }, c);
     el('text', { class: 'lbl', x: g.cX + 10, y: g.cTop + 17 }, c, 'counter.completed');
     el('text', { class: 'value', x: g.cX + g.cW / 2, y: g.cTop + 52, 'text-anchor': 'middle' }, c, '0');
     el('text', { class: 'lbl', x: g.cX + g.cW - 10, y: g.cTop + 56, 'text-anchor': 'end' }, c, `기대 ${cfg.threads}`);
 
     // Lock은 counter 옆에 둔다. 이름, 쥔 스레드, 기다리는 스레드를 한 줄씩 적는다.
-    const lk = el('g', { class: 'lock', id: 'lockNode' }, svg);
+    const lk = el('g', Object.assign({ class: 'lock', id: 'lockNode' }, selAttrs(`${pid}-lock`)), svg);
     el('rect', { x: g.lockX, y: g.cTop, width: g.lockW, height: g.cH, rx: 8 }, lk);
     el('text', { x: g.lockX + 10, y: g.cTop + 18 }, lk, 'Lock');
     el('text', { class: 'lbl lk-owner', x: g.lockX + 10, y: g.cTop + 38 }, lk, '');
@@ -495,7 +728,7 @@
     const lost = v.events.some((e) => e.type === 'lost');
     const wrong = idx === lastIdx() && run.finished && c.value !== c.expected;
     const cn = $('#counterNode');
-    cn.setAttribute('class', `counter${c.value !== before ? ' changed' : ''}${lost ? ' lost' : ''}${wrong ? ' wrong' : ''}`);
+    setCls(cn, `counter${c.value !== before ? ' changed' : ''}${lost ? ' lost' : ''}${wrong ? ' wrong' : ''}`);
     cn.querySelector('.value').textContent = String(c.value);
     if (animate && c.value !== before) {
       cn.classList.remove('bump');
@@ -506,11 +739,11 @@
     const lk = v.after.lock[pid];
     const ln = $('#lockNode');
     if (!lk.used) {
-      ln.setAttribute('class', 'lock unused');
+      setCls(ln, 'lock unused');
       ln.querySelector('.lk-owner').textContent = g.lockW >= 120 ? '이 구성은 안 씀' : '안 씀';
       ln.querySelector('.lk-wait').textContent = '';
     } else {
-      ln.setAttribute('class', `lock${lk.owner ? ' held' : ''}`);
+      setCls(ln, `lock${lk.owner ? ' held' : ''}`);
       ln.querySelector('.lk-owner').textContent = lk.owner ? `${M.josa(short(lk.owner), ['이', '가'])} 쥠` : '비어 있음';
       // 좁은 관계도에서는 기다리는 스레드가 둘 이상이면 수만 적는다. 누가 기다리는지는 스레드 아래 "Lock 대기"로 보인다.
       const names = lk.waiters.map(short);
@@ -546,6 +779,10 @@
     g.thBox = [{ x: g.lx, y: thTop, w: g.lw, h: 2 * g.r + 20 }];
     g.thLabel = true;
     g.home = { x: g.lx + g.bw / 2, y: g.interpY + 20 };
+    g.slots = [{ p: 0, px: m, pw: W - 2 * m, ix: mi, iw: W - 2 * mi, home: g.home }];
+    g.interpOff = '인터프리터 · GIL 끔';
+    // 루프 스레드 하나만 GIL을 쓰므로 해제 요청이 생기지 않는다.
+    g.reqRoom = true;
     // 스레드 원 아래는 루프 상자로 이어지므로 GIL은 원 왼쪽에, 기다리는 이유는 원 오른쪽에 적는다.
     g.gilAt = { x: g.thX[0] - g.r - 10 - g.bw / 2, y: g.thY };
     // 좁은 화면에서는 이유 글자를 조금 작게, 원에 조금 더 붙여 적어 스레드 상자 안에 들어가게 한다.
@@ -604,12 +841,15 @@
 
   function buildLoop(svg, g) {
     drawFrame(svg, g);
-    el('rect', { class: 'loopbox', x: g.lx, y: g.loopTop, width: g.lw, height: g.loopB - g.loopTop, rx: 10 }, svg);
-    el('text', { class: 'lbl', x: g.lx + 10, y: g.loopTop + 17 }, svg, '이벤트 루프');
+    const pid = proc().id;
+    const loop = el('g', selAttrs(`${pid}-loop`), svg);
+    el('rect', { class: 'loopbox', x: g.lx, y: g.loopTop, width: g.lw, height: g.loopB - g.loopTop, rx: 10 }, loop);
+    el('text', { class: 'lbl', x: g.lx + 10, y: g.loopTop + 17 }, loop, '이벤트 루프');
     if (scene === 'sem') {
-      el('rect', { class: 'sembox', x: g.lx, y: g.semTop, width: g.lw, height: g.semB - g.semTop, rx: 8 }, svg);
-      el('text', { class: 'lbl', x: g.lx + 10, y: g.semTop + 17 }, svg, `asyncio.Semaphore(${cfg.semaphore})`);
-      el('text', { class: 'lbl', id: 'semLeft', x: g.lx + g.lw - 10, y: g.semTop + 17, 'text-anchor': 'end' }, svg, '');
+      const sem = el('g', selAttrs(`${pid}-sem`), svg);
+      el('rect', { class: 'sembox', x: g.lx, y: g.semTop, width: g.lw, height: g.semB - g.semTop, rx: 8 }, sem);
+      el('text', { class: 'lbl', x: g.lx + 10, y: g.semTop + 17 }, sem, `asyncio.Semaphore(${cfg.semaphore})`);
+      el('text', { class: 'lbl', id: 'semLeft', x: g.lx + g.lw - 10, y: g.semTop + 17, 'text-anchor': 'end' }, sem, '');
     }
     // Task가 머무는 줄마다 옅은 칸을 깔고 줄 이름을 칸 안에 적는다. 알약은 늘 어느 칸 위에 놓이므로
     // 멈춰 있을 때도 칸 이름으로 상태가 읽힌다. Semaphore를 얻은 Task 줄은 Task가 머무는 곳이 아니라
@@ -638,7 +878,7 @@
     // Task 알약. 자리는 단계마다 transform으로 옮긴다.
     const tasks = el('g', { class: 'tasks' }, svg);
     for (const id of track.tasks) {
-      const t = el('g', { class: 'tk', 'data-id': id }, tasks);
+      const t = el('g', Object.assign({ class: 'tk', 'data-id': id }, selAttrs(id)), tasks);
       el('title', {}, t, '');
       el('rect', { x: 0, y: 0, width: g.pw, height: g.ph, rx: g.ph / 2 }, t);
       el('text', { class: 'tn', x: g.pw / 2, y: 15, 'text-anchor': 'middle' }, t, taskShort(id));
@@ -695,22 +935,22 @@
         void pill.getBoundingClientRect();
       }
       if (forward && ran && !hidden && place.row !== 'run' && from !== 'run') {
-        pill.setAttribute('class', `${cls} transit`);
+        setCls(pill, `${cls} transit`);
         pill.querySelector('.due').textContent = '';
         setPos(pill, g.seat, false);
         pill._hopFn = () => {
           pill._hopFn = null;
-          pill.setAttribute('class', cls);
+          setCls(pill, cls);
           pill.querySelector('.due').textContent = dueText;
           setPos(pill, dest, false);
         };
         pill._hop = setTimeout(pill._hopFn, MOVE_MS);
       } else {
-        pill.setAttribute('class', cls);
+        setCls(pill, cls);
         pill.querySelector('.due').textContent = dueText;
         setPos(pill, dest, !animate || hidden);
       }
-      pill.querySelector('title').textContent = `${taskLabel(id)} · ${st.name}${st.why ? ` (${st.why})` : ''}${ran ? ' · 이 단계에 실행함' : ''}`;
+      pill.querySelector('title').textContent = `${taskLabel(id)} · ${stateText(st)}${ran ? ' · 이 단계에 실행함' : ''}`;
     }
     if (scene === 'sem') {
       const tr = track.per[idx];
@@ -804,8 +1044,15 @@
 
   function renderCounts() {
     const gm = M.GIL_MODES[cfg.gil];
-    const items = [['논리 CPU', `${cfg.cpus}개`], ['프로세스', '1개'], ['인터프리터', '1개'], ['GIL', gm.active ? '1개 (켬)' : '0개 (끔)']];
-    if (scene === 'counter') {
+    const P = procs().length;
+    // 작업이 없는 작업자 수는 작업자 줄(스레드 방식이면 OS 스레드, 프로세스 방식이면 프로세스)에 적는다.
+    const idle = isWorker() ? threadIds().filter(unusedThread).length : 0;
+    const procMode = isWorker() && cfg.mode === 'processes';
+    const idleText = (on) => (on && idle ? ` (작업 없음 ${idle})` : '');
+    const items = [['논리 CPU', `${cfg.cpus}개`], ['프로세스', `${P}개${idleText(procMode)}`], ['인터프리터', `${P}개`], ['GIL', gm.active ? `${P}개 (켬)` : '0개 (끔)']];
+    if (isWorker()) {
+      items.push(['OS 스레드', `${threadIds().length}개${idleText(!procMode)}`], ['작업', `${cfg.jobs}개`]);
+    } else if (scene === 'counter') {
       items.push(['OS 스레드', `${cfg.threads}개`], ['counter', '1개'], ['Lock', cfg.lockScope === 'none' ? '1개 (안 씀)' : '1개']);
     } else {
       items.push(['OS 스레드', '1개'], ['이벤트 루프', '1개']);
@@ -830,7 +1077,10 @@
     }
     if (runs.length) parts.push(`실행 중: ${runs.join(', ')}.`);
     if (waits.length) parts.push(`${waits.join(', ')}.`);
-    if (isLoop()) {
+    if (isWorker()) {
+      const jobs = threadIds().map((id) => [id, jobNow(id, v)]).filter(([, j]) => j);
+      if (jobs.length) parts.push(`단계 끝 작업 진행: ${jobs.map(([id, j]) => `${short(id)} 작업 ${j.job + 1} ${j.done}/${j.total}`).join(', ')}.`);
+    } else if (isLoop()) {
       const ran = track.tasks.filter((id) => taskState(id, v).cls === 'run');
       if (ran.length) parts.push(`이 단계에 실행한 Task: ${ran.map(taskShort).join(', ')}.`);
       const rows = {};
@@ -856,9 +1106,11 @@
     } else {
       parts.push(`counter.completed ${v.after.counter[pid].value}.`);
     }
-    if (v.gil[pid].active) {
-      const h = v.after.gil[pid];
-      parts.push(h ? `GIL은 스레드 ${short(h)}.` : 'GIL은 비어 있음.');
+    for (const pr of procs()) {
+      if (!v.gil[pr.id].active) continue;
+      const h = v.after.gil[pr.id];
+      const who = procs().length > 1 ? `프로세스 ${pr.idx + 1}의 GIL은` : 'GIL은';
+      parts.push(h ? `${who} 스레드 ${short(h)}.` : `${who} 비어 있음.`);
     }
     return parts.join(' ');
   }
@@ -866,7 +1118,7 @@
   // ---------- 설명 한 문장 ----------
 
   function mainEvent(v) {
-    for (const type of PRIORITY[isLoop() ? 'loop' : 'counter']) {
+    for (const type of PRIORITY[kind()]) {
       const e = v.events.find((x) => x.type === type);
       if (e) return e;
     }
@@ -883,7 +1135,36 @@
     return `${s}.`;
   }
 
+  // 작업자 장면에서 이벤트가 없는 단계는 실행한 스레드와 그 스레드가 한 일, OS 대기 중인 스레드를 적는다.
+  function workerQuiet(v) {
+    const ids = threadIds();
+    const runs = ids.filter((id) => stateOf(v.threads[id]).cls === 'run');
+    const sleeps = ids.filter((id) => v.threads[id].act === 'os-sleep');
+    const parts = [];
+    if (runs.length) parts.push(`이 단계에 실행: ${runs.map((id) => `스레드 ${short(id)} · ${v.threads[id].label}`).join(', ')}`);
+    if (sleeps.length) parts.push(`OS 대기 중: ${sleeps.map((id) => `스레드 ${short(id)}`).join(', ')}`);
+    return parts.length ? `${parts.join('. ')}.` : '';
+  }
+
+  // 작업자 장면의 마지막 줄: 한 단계에 함께 실행하거나 함께 기다린 스레드의 최대 수. 단계 수는 설명용이라 적지 않는다.
+  function workerResult() {
+    let py = 0;
+    let cpu = 0;
+    let sleep = 0;
+    for (const v of run.views) {
+      const acts = Object.values(v.threads).map((t) => t.act);
+      py = Math.max(py, acts.filter((a) => a === 'run-py').length);
+      cpu = Math.max(cpu, v.cpus.filter(Boolean).length);
+      sleep = Math.max(sleep, acts.filter((a) => a === 'os-sleep').length);
+    }
+    const head = `결과: 작업 ${cfg.jobs}개가 모두 끝났다.`;
+    if (scene === 'native') return `${head} 한 단계에 CPU를 쓴 스레드는 최대 ${cpu}개였고, Python을 실행한 스레드는 최대 ${py}개였다.`;
+    if (scene === 'tsleep') return `${head} 한 단계에 time.sleep()으로 함께 기다린 스레드는 최대 ${sleep}개였다.`;
+    return `${head} 한 단계에 Python을 실행한 스레드는 최대 ${py}개였다.`;
+  }
+
   function resultHtml(v) {
+    if (isWorker()) return `<span class="result">${esc(workerResult())}</span>`;
     if (!isLoop()) {
       const c = v.after.counter[proc().id];
       const gone = c.expected - c.value;
@@ -901,7 +1182,8 @@
   function renderCaption(v) {
     const main = mainEvent(v);
     const rest = v.events.filter((e) => e !== main && e.type !== 'end');
-    const text = main ? main.text : isLoop() && idx > 0 ? quietText(v) : '';
+    const quiet = idx === 0 ? '' : isLoop() ? quietText(v) : isWorker() ? workerQuiet(v) : '';
+    const text = main ? main.text : quiet;
     let html = esc(text);
     if (idx === lastIdx() && run.finished) html += resultHtml(v);
     $('#caption').innerHTML = html;
@@ -922,25 +1204,44 @@
   function fromCode(text, marks) { return text.split('\n').map((t) => L(t, marks[t.trim()])); }
 
   function codeFor() {
+    if (isWorker()) return workerCode();
     if (scene === 'counter') return counterCode();
     if (scene === 'sem') return semCode();
     return loopCode();
   }
 
+  // 작업 함수 아래에 작업을 작업자에게 나눠 주는 실험 코드(run_threads나 run_processes)를 붙인다.
+  // 이름표 줄 키 w:i는 작업 하나 안에서 i번째 연산이다(model.js의 jobOps).
+  function workerCode() {
+    const procMode = cfg.mode === 'processes';
+    const runner = procMode ? 'run_processes' : 'run_threads';
+    const exec = fromCode(RC.CODE[procMode ? 'processes' : 'threads'], {});
+    const sig = `${scene}-${cfg.mode}`;
+    if (scene === 'py') {
+      return { sig, note: `실험 코드(workloads.py의 count_primes, models.py의 ${runner})에서 옮겼다. 계산하는 스레드의 이름표는 안쪽 반복문 줄에 붙인다. 실제로 몇 번 도는지와는 상관없다.`,
+        lines: fromCode(RC.CODE.countPrimes, { 'for divisor in range(2, isqrt(candidate) + 1):': ['w:0'] }).concat([L('')], exec) };
+    }
+    if (scene === 'native') {
+      return { sig, note: `hash_job()은 hashlib 문서의 예를 바탕으로 쓴 설명용 코드다. 이 실험에서 실행하거나 측정하지 않았다. ${runner}()는 실험 코드(models.py)에서 옮겼다.`,
+        lines: fromCode(RC.CODE.native, { 'h = hashlib.sha256()': ['w:0'], 'h.update(data)  # 2,047바이트를 넘는 data면 계산 중 GIL을 놓는다': ['w:1'], 'return h.hexdigest()': ['w:2'] })
+          .concat([L('')], exec) };
+    }
+    return { sig, note: `실험 코드(workloads.py의 run_job, models.py의 ${runner})에서 옮겼다. time.sleep()을 부르는 단계와 그 안에서 기다리는 단계의 이름표는 같은 줄에 붙인다.`,
+      lines: fromCode(RC.CODE.runJob, { 'time.sleep(job.sleep_s)': ['w:0', 'w:1'], 'return 1': ['w:2'] }).concat([L('')], exec) };
+  }
+
+  // content.js의 실험 코드(counter_kernels.py)에 이름표 줄을 붙인다. Lock을 놓는 주석 줄만 덧붙인다.
   function counterCode() {
-    const unlocked = [
-      L('def increment_unlocked(counter, lock, yield_between):'), L('    previous = counter.completed', ['read']),
-      L('    if yield_between:'), L('        time.sleep(0)', ['yield0']), L('    counter.completed = previous + 1', ['write'])];
+    const marks = { 'previous = counter.completed': ['read'], 'time.sleep(0)': ['yield0'], 'counter.completed = previous + 1': ['write'], 'with lock:': ['lockAcquire'] };
+    const release = L('    # with 블록을 나가며 Lock을 놓는다', ['lockRelease']);
+    const unlocked = fromCode(RC.CODE.counterUnlocked, marks);
     if (cfg.lockScope === 'none') return { sig: 'none', note: '실험 코드에서 옮겼다.', lines: unlocked };
     if (cfg.lockScope === 'full') {
-      return { sig: 'full', note: '실험 코드에서 옮겼다. 마지막 주석 줄은 with 블록을 나갈 때 Lock을 놓는 지점을 보이려고 덧붙였다.', lines: unlocked.concat([
-        L(''), L('def increment_candidate(counter, lock, yield_between):'), L('    with lock:', ['lockAcquire']),
-        L('        increment_unlocked(counter, lock, yield_between)'), L('    # with 블록을 나가며 Lock을 놓는다', ['lockRelease'])]) };
+      return { sig: 'full', note: '실험 코드에서 옮겼다. 마지막 주석 줄은 with 블록을 나갈 때 Lock을 놓는 지점을 보이려고 덧붙였다.',
+        lines: unlocked.concat([L('')], fromCode(RC.CODE.counterLocked, marks), [release]) };
     }
-    return { sig: 'write', note: '실험에서 실행하지 않은 설명용 변형이다. 쓰기만 Lock으로 감쌌을 때를 보이려고 만들었다. 마지막 주석 줄도 덧붙인 줄이다.', lines: [
-      L('def increment_write_only(counter, lock, yield_between):'), L('    previous = counter.completed', ['read']),
-      L('    if yield_between:'), L('        time.sleep(0)', ['yield0']), L('    with lock:', ['lockAcquire']),
-      L('        counter.completed = previous + 1', ['write']), L('    # with 블록을 나가며 Lock을 놓는다', ['lockRelease'])] };
+    return { sig: 'write', note: '실험에서 실행하지 않은 설명용 변형이다. 쓰기만 Lock으로 감쌌을 때를 보이려고 만들었다. 마지막 주석 줄도 덧붙인 줄이다.',
+      lines: fromCode(RC.CODE.counterWriteOnly, marks).concat([release]) };
   }
 
   function semCode() {
@@ -992,9 +1293,10 @@
     if (!isLoop()) {
       for (const id of threadIds()) {
         const t = v.threads[id];
-        if (!t.op || t.act === 'done') continue;
+        if (!t.op || t.act === 'done' || t.act === 'unused') continue;
         const st = stateOf(t);
-        out.push({ label: short(id), key: t.op.k, cls: st.cls, tip: `스레드 ${short(id)} · ${st.name}${st.why ? ` (${st.why})` : ''}` });
+        out.push({ label: short(id), key: isWorker() ? `w:${t.op.i}` : t.op.k, cls: st.cls, ran: st.cls === 'run',
+          tip: `스레드 ${short(id)} · ${stateText(st)}` });
       }
       return out;
     }
@@ -1037,9 +1339,9 @@
     }
     ol.querySelectorAll('li').forEach((li) => {
       let as = byLine.get(+li.dataset.line) || [];
-      // Task가 많은 장면에서는 한 줄에 이름표를 둘까지만 둔다. 실행한 Task를 먼저 두고 나머지는 수로 적는다.
+      // 실행 주체가 많은 장면에서는 한 줄에 이름표를 둘까지만 둔다. 실행한 주체를 먼저 두고 나머지는 수로 적는다.
       let more = null;
-      if (isLoop() && as.length > 2) {
+      if (scene !== 'counter' && as.length > 2) {
         as = as.slice().sort((x, y) => (y.ran ? 1 : 0) - (x.ran ? 1 : 0));
         more = as.slice(1);
         as = as.slice(0, 1);
@@ -1055,6 +1357,19 @@
     return `<button type="button" tabindex="-1" class="c ${cls}" data-step="${k}" title="${esc(tip)}">${mark}</button>`;
   }
 
+  // 칸 글자: 작업자 장면은 그 단계에 실행한 작업 번호(네이티브 계산은 "네"), 공유 카운터는 그 단계에 실행한 연산이다.
+  function threadMark(t, st) {
+    if (st.cls !== 'run' || !t.op || isLoop()) return '';
+    if (isWorker()) return t.act === 'run-native' ? '네' : String(t.op.job + 1);
+    return OP_MARK[t.op.k] || '';
+  }
+
+  function stripNote() {
+    if (!isWorker()) return STRIP_NOTE[scene];
+    const marks = scene === 'native' ? '칸 글자: 숫자는 Python으로 실행한 작업 번호, 네는 GIL 없이 실행한 네이티브 계산.' : '칸 글자: 그 단계에 실행한 작업 번호.';
+    return `${marks}${gilUsed() ? ' GIL 줄: 그 단계가 끝난 뒤 GIL을 쥔 스레드.' : ''}`;
+  }
+
   function buildStrip() {
     const N = lastIdx();
     const pid = proc().id;
@@ -1063,18 +1378,34 @@
     const out = ['<div class="rh">단계</div>'];
     for (let k = 1; k <= N; k++) out.push(`<div class="ch" data-step="${k}">${k}</div>`);
     for (const id of threadIds()) {
+      // 작업이 없는 스레드는 모든 단계에서 같으므로 줄을 두지 않는다.
+      if (unusedThread(id)) continue;
       out.push(`<div class="rh">스레드 ${short(id)}</div>`);
       for (let k = 1; k <= N; k++) {
         const v = run.views[k];
         const t = v.threads[id];
         const st = stateOf(t);
         const lost = v.events.some((e) => e.type === 'lost' && e.ids[0] === id);
-        const mark = !isLoop() && st.cls === 'run' && t.op ? OP_MARK[t.op.k] || '' : '';
-        const tip = `단계 ${k} · 스레드 ${short(id)} · ${st.name}${st.why && st.cls !== 'done' ? ` (${st.why})` : ''}${st.cls === 'run' && t.label ? ` · ${t.label}` : ''}${lost ? ' · 다른 스레드의 증가를 덮어씀' : ''}`;
-        out.push(stripCell(k, `${st.cls}${lost ? ' lost' : ''}`, mark, tip));
+        const tip = `단계 ${k} · 스레드 ${short(id)} · ${stateText(st)}${st.cls === 'run' && t.label ? ` · ${t.label}` : ''}${lost ? ' · 다른 스레드의 증가를 덮어씀' : ''}`;
+        out.push(stripCell(k, `${st.cls}${lost ? ' lost' : ''}`, threadMark(t, st), tip));
       }
     }
-    if (isLoop()) {
+    if (isWorker()) {
+      // 프로세스마다 GIL 줄 하나. 그 단계가 끝난 뒤 GIL을 쥔 스레드를 적는다(관계도의 꼬리표와 같은 시점).
+      if (gilUsed()) {
+        for (const pr of procs()) {
+          const name = procs().length > 1 ? `GIL ${pr.idx + 1}` : 'GIL';
+          const of = procs().length > 1 ? `프로세스 ${pr.idx + 1}의 GIL` : 'GIL';
+          out.push(`<div class="rh">${name}</div>`);
+          let before = run.views[0].after.gil[pr.id];
+          for (let k = 1; k <= N; k++) {
+            const h = run.views[k].after.gil[pr.id];
+            out.push(stripCell(k, `val${h !== before ? ' changed' : ''}`, h ? short(h) : '', `단계 ${k} 뒤 ${of}: ${h ? `스레드 ${M.josa(short(h), ['이', '가'])} 쥠` : '비어 있음'}`));
+            before = h;
+          }
+        }
+      }
+    } else if (isLoop()) {
       for (const id of track.tasks) {
         out.push(`<div class="rh">${esc(taskLabel(id))}</div>`);
         for (let k = 1; k <= N; k++) {
@@ -1083,7 +1414,7 @@
           const s = v.tasks[id];
           const mark = st.cls === 'run' && s.op ? TASK_MARK[s.op.k] || '' : '';
           const tip = st.cls === 'none' ? `단계 ${k} · ${taskLabel(id)} · 아직 없음`
-            : `단계 ${k} · ${taskLabel(id)} · ${st.name}${st.why && st.cls !== 'done' ? ` (${st.why})` : ''}${st.cls === 'run' && s.label ? ` · ${s.label}` : ''}`;
+            : `단계 ${k} · ${taskLabel(id)} · ${stateText(st)}${st.cls === 'run' && s.label ? ` · ${s.label}` : ''}`;
           out.push(stripCell(k, `${st.cls}${st.late ? ' late' : ''}`, mark, tip));
         }
       }
@@ -1108,6 +1439,7 @@
       }
     }
     strip.innerHTML = out.join('');
+    $('#stripNote').textContent = stripNote();
   }
 
   function renderStripCursor() {
@@ -1134,6 +1466,146 @@
     $('#log').innerHTML = items.join('');
   }
 
+  // ---------- 요소 설명 ----------
+  // 개념, 주요 특성, 근거, 복습 카드는 content.js의 ELEMENTS에서 가져오고, 지금 상태는 단계마다 여기서 만든다.
+  // "이 단계 동안"은 그 단계에 일어난 실행과 대기이고, "단계 끝"은 그 단계를 마친 뒤의 값이다.
+
+  function evHtml(keys) {
+    return keys.map((k) => RC.EV[k]).filter(Boolean)
+      .map((e) => `<li><span class="tag t-${e.type}">${esc(RC.TYPE_LABEL[e.type])}</span> <a href="${esc(e.href)}" target="_blank" rel="noopener">${esc(e.label)}</a></li>`).join('');
+  }
+  function cardsHtml(ids) { return ids.map((c) => `<li><b>${esc(c)}</b> ${esc(RC.CARDS[c] || '')}</li>`).join(''); }
+
+  function unusedReason(id) {
+    const type = typeOf(id);
+    if (type === 'thread' && unusedThread(id)) return RC.UNUSED[cfg.mode === 'processes' ? 'nojob-proc' : 'nojob'];
+    if (type === 'lock' && cfg.lockScope === 'none') return RC.UNUSED['lock-none'];
+    return null;
+  }
+
+  function nowLines(id, type, v) {
+    const a = v.after;
+    const name = (tid) => `스레드 ${short(tid)}`;
+    const list = (ids) => (ids.length ? ids.map(name).join(', ') : '없음');
+    const out = [];
+    if (type === 'cpu') {
+      const tid = v.cpus[+id.slice(4)];
+      if (tid) {
+        out.push(`이 단계 동안 ${M.josa(name(tid), ['을', '를'])} 실행했다. ${actLabel(v.threads[tid])}.`);
+        if (v.threads[tid].label) out.push(`하던 일: ${v.threads[tid].label}.`);
+      } else {
+        out.push('이 단계 동안 실행한 스레드가 없다.');
+      }
+      const runnable = Object.values(v.threads).filter((t) => ['run-py', 'run-native', 'cpu-wait'].includes(t.act)).length;
+      out.push(`이 단계에 실행할 수 있던 스레드 ${runnable}개, 논리 CPU ${cfg.cpus}개, CPU를 배정받은 스레드 ${v.cpus.filter(Boolean).length}개.`);
+    } else if (type === 'process' || type === 'interp') {
+      const ths = procOf(id).threads.filter((t) => !unusedThread(t.id));
+      if (type === 'process') {
+        out.push(`OS 스레드 ${ths.length}개. 이 단계 동안 CPU에서 실행한 스레드 ${ths.filter((t) => v.threads[t.id].cpu != null).length}개.`);
+        if (procs().length > 1) out.push(`프로세스 ${procs().length}개가 논리 CPU ${cfg.cpus}개를 함께 쓴다. 인터프리터와 GIL은 프로세스마다 따로 있다.`);
+      } else {
+        out.push(`이 인터프리터에 연결된 스레드 ${ths.length}개. 이 단계 동안 Python을 실행한 스레드 ${ths.filter((t) => v.threads[t.id].act === 'run-py').length}개.`);
+        out.push(`빌드와 GIL: ${M.GIL_MODES[cfg.gil].label}.`);
+      }
+    } else if (type === 'gil') {
+      const pid = pidOf(id);
+      const holder = a.gil[pid];
+      const during = v.gil[pid].holder;
+      out.push(`단계 끝에 쥔 스레드: ${holder ? name(holder) : '없음'}.`);
+      if (during && during !== holder) out.push(`이 단계 동안에는 ${M.josa(name(during), ['이', '가'])} 쥐고 있었다.`);
+      out.push(`이 단계 동안 GIL을 기다린 스레드: ${list(v.gil[pid].queue)}.`);
+      if (gilRequested(v, pid)) out.push('해제 요청이 표시돼 있다. 쥔 스레드가 CPU에서 실행해 확인 지점에 닿아야 실제로 놓는다.');
+      if (during && v.threads[during].cpu == null) out.push(`${M.josa(name(during), ['은', '는'])} 이 단계에 CPU를 받지 못했다. GIL을 쥐었다고 실행 중인 것은 아니다.`);
+    } else if (type === 'thread') {
+      const t = v.threads[id];
+      if (t.act === 'unused') return ['맡은 작업이 없어 실행하지 않는다.'];
+      out.push(`이 단계 동안: ${actLabel(t)}.`);
+      if (t.label && t.act !== 'done') out.push(`하던 일: ${t.label}.`);
+      if (gilUsed() && a.gil[pidOf(id)] === id) out.push('단계 끝에 GIL을 쥐고 있다.');
+      if (t.dropRequested) out.push('GIL 해제 요청을 받았다. CPU에서 실행해 확인 지점에 닿아야 실제로 놓는다.');
+      const th = stateThread(id);
+      if (th.jobs.length) out.push(`맡은 작업: ${th.jobs.map((j) => `작업 ${j + 1}`).join(', ')} (설명용 고정 배분).`);
+      const j = jobNow(id, v);
+      if (j) out.push(`단계 끝: 작업 ${j.job + 1}의 ${j.total}단위 가운데 ${j.done}단위를 했다. 단위는 설명용 단계 수다.`);
+      if (id in a.locals && t.act !== 'done') out.push(`단계 끝 지역 변수 previous = ${a.locals[id] == null ? '아직 읽지 않음' : a.locals[id]}.`);
+    } else if (type === 'loop') {
+      const lt = loopThread();
+      out.push(`루프 스레드(${name(lt.id)}): ${actLabel(v.threads[lt.id])}.`);
+      const ready = track.per[idx].ready;
+      out.push(`단계 끝 준비 큐: ${ready.length ? ready.map(taskShort).join(', ') : '비어 있음'}.`);
+      const timers = a.timers[pidOf(id)] || [];
+      out.push(`단계 끝 타이머: ${timers.length ? timers.map((x) => `${taskShort(x.task)} 단계 ${x.due}`).join(', ') : '없음'}.`);
+    } else if (type === 'sem') {
+      const s = a.sem[pidOf(id)];
+      out.push(`단계 끝: 세마포어를 얻은 Task ${s.inside.length}개(상한 ${s.limit}), 내부 카운터 ${s.value}, 얻기 대기 ${s.waiters.length}개.`);
+      out.push(`Task ${track.tasks.length}개(main 포함)가 루프 스레드 하나에서 돈다.`);
+    } else if (type === 'counter') {
+      const c = a.counter[pidOf(id)];
+      out.push(`단계 끝 completed = ${c.value} (기대 ${c.expected}).`);
+      for (const tid of threadIds()) out.push(`${name(tid)}의 previous = ${a.locals[tid] == null ? '아직 읽지 않음' : a.locals[tid]}.`);
+    } else if (type === 'lock') {
+      out.push(`범위: ${M.LOCK_SCOPES[cfg.lockScope]}.`);
+      const lk = a.lock[pidOf(id)];
+      if (lk.used) out.push(`단계 끝에 쥔 스레드: ${lk.owner ? name(lk.owner) : '없음'}. 기다리는 스레드: ${list(lk.waiters)}.`);
+    } else {
+      const s = v.tasks[id];
+      if (!s || s.status === 'not-created') return ['아직 없다. main Task가 이 Task를 만들기 전이다.'];
+      if (ranNow(id, v)) out.push(`이 단계 동안 루프 스레드에서 실행했다: ${s.label}.`);
+      const st = pillState(id, v);
+      out.push(`단계 끝: ${stateText(st)}.`);
+      const af = a.tasks[id];
+      if (af.status === 'wait-timer') out.push(`타이머 만료 단계 ${af.due}${af.due < v.step ? '. 이미 지났다' : ''}.`);
+      if (af.status !== 'done' && af.label) out.push(`다음에 할 일: ${af.label}.`);
+      for (const b of a.beats[id] || []) out.push(`예정 ${b.beat}: 실행 가능 예정 단계 ${b.scheduled}, 재개 단계 ${b.resumed}, ${b.lag > 0 ? `${b.lag}단계 늦음` : '늦지 않음'} (설명용 단계).`);
+    }
+    return out;
+  }
+
+  // 고정된 설명은 고른 요소가 바뀔 때만 다시 채운다. 그래서 단계를 옮겨도 펼친 근거 칸이 닫히지 않는다.
+  function renderDetails() {
+    const pane = $('#details');
+    if (!selected) { pane.hidden = true; detailsFor = null; return; }
+    const type = typeOf(selected);
+    const d = RC.ELEMENTS[type];
+    if (detailsFor !== selected) {
+      detailsFor = selected;
+      const why = unusedReason(selected);
+      $('#detailsKind').textContent = d.kind;
+      $('#detailsTitle').textContent = nameOf(selected);
+      $('#detailsWhy').hidden = !why;
+      $('#detailsWhy').querySelector('p').textContent = why ? why.text : '';
+      $('#detailsConcept').textContent = d.concept;
+      $('#detailsProps').innerHTML = d.props.map((p) => `<li>${esc(p.replace('{SWITCH_WAIT}', M.SWITCH_WAIT))}</li>`).join('');
+      $('#detailsEv').innerHTML = evHtml(d.ev.concat(why ? why.ev : []));
+      $('#detailsCards').innerHTML = cardsHtml(d.cards);
+    }
+    $('#detailsNowHead').textContent = `지금 · 단계 ${idx}`;
+    $('#detailsNow').innerHTML = nowLines(selected, type, view()).map((s) => `<li>${esc(s)}</li>`).join('');
+    pane.hidden = false;
+  }
+
+  function select(id) {
+    selected = id;
+    detailsFor = null;
+    markSelected();
+    renderDetails();
+    $('#live').textContent = `${nameOf(id)} 설명을 열었다.`;
+    // 좁은 화면에서는 설명 칸이 관계도 아래에 있다. 화면 밖에 있으면 보이는 곳까지 민다.
+    const r = $('#details').getBoundingClientRect();
+    if (r.top > window.innerHeight || r.bottom < 0) $('#details').scrollIntoView({ block: 'nearest', behavior: motionOff.matches ? 'auto' : 'smooth' });
+  }
+
+  function closeDetails() {
+    const was = selected;
+    const inside = $('#details').contains(document.activeElement);
+    selected = null;
+    markSelected();
+    renderDetails();
+    // 설명 칸 안에서 닫았으면 그 요소로 초점을 돌려준다.
+    const back = was && $('#board').querySelector(`[data-sel="${was}"][tabindex]`);
+    if (inside && back) back.focus();
+  }
+
   // ---------- 진행 ----------
 
   function render(animate) {
@@ -1144,7 +1616,8 @@
     renderCode(v);
     renderStripCursor();
     renderLog();
-    $('#board').setAttribute('aria-label', describe(v));
+    renderDetails();
+    $('#boardSummary').textContent = describe(v);
     $('#scrub').value = String(idx);
     $('#stepNum').textContent = String(idx);
     $('#first').disabled = idx === 0;
@@ -1190,6 +1663,9 @@
     shown = -1;
     codeSig = null;
     buildBoard();
+    // 구성을 바꿔 고른 요소가 없어졌으면 설명 칸을 닫는다. 남아 있으면 설명을 새 구성으로 다시 채운다.
+    if (selected && !$('#board').querySelector(`[data-sel="${selected}"]`)) selected = null;
+    detailsFor = null;
     buildStrip();
     renderCounts();
     $('#scrub').max = String(lastIdx());
@@ -1201,7 +1677,15 @@
     const d = SCENES[key];
     const next = Object.assign({}, cfgs[key] || d.start, patch || {});
     for (const [k, [lo, hi]] of Object.entries(d.range)) if (next[k] != null) next[k] = Math.min(hi, Math.max(lo, +next[k]));
-    return M.normalizeConfig(Object.assign(next, d.base));
+    // 작업자 장면: 스레드 방식은 프로세스 하나에 스레드 n개, 프로세스 방식은 프로세스 n개에 스레드 하나씩 둔다.
+    const mode = next.mode === 'processes' ? 'processes' : 'threads';
+    if (d.kind === 'worker') {
+      next.processes = mode === 'processes' ? next.workers : 1;
+      next.threads = mode === 'processes' ? 1 : next.workers;
+    }
+    const c = M.normalizeConfig(Object.assign(next, d.base));
+    if (d.kind === 'worker') Object.assign(c, { mode, workers: next.workers });
+    return c;
   }
 
   function setConfig(patch) {
@@ -1214,31 +1698,41 @@
 
   // ---------- 장면 고르기와 장면별 조절 ----------
 
+  const MODE_OPT = { label: '실행 방식', key: 'mode', items: [['threads', '스레드'], ['processes', '프로세스']] };
   const OPTS = {
+    py: MODE_OPT,
+    native: MODE_OPT,
+    tsleep: MODE_OPT,
     counter: { label: 'Lock 범위', key: 'lockScope', items: [['none', '없음'], ['write', '쓰기만'], ['full', '읽기부터 쓰기까지']] },
     loop: { label: 'A가 하는 일', key: 'loopAction', items: [['idle', 'A 없음'], ['blocking', 'time.sleep'], ['async', 'await sleep'], ['cpu', 'CPU 계산']] },
     sem: { label: 'Semaphore 상한', key: 'semaphore', items: [[1, '1'], [2, '2'], [3, '3'], [4, '4']] },
   };
   const CFG_NOTE = {
-    counter: '스레드마다 counter를 한 번 늘린다. 이 시험판은 프로세스 하나만 그린다.',
-    loop: 'B는 실험의 12번 대신 두 번만 재개한다. 단계 수는 설명용이다. 이 시험판은 프로세스 하나만 그린다.',
-    sem: '작업 Task마다 await asyncio.sleep()을 한 번 한다. 이 시험판은 프로세스 하나만 그린다.',
+    py: '작업마다 count_primes()를 한 번 부른다. 작업은 작업자에게 차례로 하나씩 나눈다(설명용 고정 배분). 프로세스는 4개까지 그린다.',
+    native: '작업마다 GIL을 놓는 네이티브 계산을 한 번 한다고 가정한 설명용 장면이다. 이 실험에서 측정하지 않았다. 작업은 작업자에게 차례로 하나씩 나눈다.',
+    tsleep: '작업마다 time.sleep(0.1)을 한 번 부른다. 작업은 작업자에게 차례로 하나씩 나눈다(설명용 고정 배분). 프로세스는 4개까지 그린다.',
+    counter: '스레드마다 counter를 한 번 늘린다. 이 장면은 프로세스 하나만 그린다.',
+    loop: 'B는 실험의 12번 대신 두 번만 재개한다. 단계 수는 설명용이다. 이 장면은 프로세스 하나만 그린다.',
+    sem: '작업 Task마다 await asyncio.sleep()을 한 번 한다. 이 장면은 프로세스 하나만 그린다.',
   };
   const STRIP_NOTE = {
     counter: '칸 글자: 읽 counter 읽기 · 쓰 counter 쓰기 · 0 time.sleep(0) · 잠 Lock 잡기 · 풀 Lock 놓기',
     loop: '칸 글자: 생 Task 만들기 · 타 await asyncio.sleep()으로 타이머 등록 · 기 재개 기록. 주황 칸: 만료 단계가 지났는데 아직 실행하지 못한 Task.',
     sem: '칸 글자: 생 Task 만들기 · 얻 세마포어 얻기(acquire) · 타 await asyncio.sleep()으로 타이머 등록 · 반 세마포어 반납(release). 주황 칸: 만료 단계가 지났는데 아직 실행하지 못한 Task.',
   };
-  const BOARD_NOTE = '옅은 칸은 Task가 머무는 곳이다. 알약은 그 단계가 끝난 뒤 Task가 있는 칸에 놓이고, 알약 모양도 그 칸의 상태를 따른다. 실행 중 칸은 루프 스레드와 이어진 한 자리라서 Task가 하나만 앉는다. 그 단계에 실행하고 다른 칸으로 간 Task는 한 단계씩 넘길 때 이 자리를 거쳐 옮겨 간다. 이벤트 루프 상자에는 루프가 직접 가진 칸(실행 중, 준비 큐, 타이머)만 넣었고, gather나 Semaphore를 기다리는 Task는 상자 밖 칸에 둔다.';
+  const BOARD_NOTE = {
+    worker: '스레드 상자 아래 "작업 1 · 2/4"는 그 스레드가 단계 끝에 하고 있는 작업과, 그 작업을 몇 단위 했는지다. 단위는 설명용 단계 수이고 시간이 아니다. 프로세스마다 인터프리터와 GIL이 따로 있고, GIL을 쥔 스레드가 없으면 꼬리표는 인터프리터 왼쪽 아래 GIL 자리로 돌아간다. 작업을 나눠 주는 main 스레드와, 프로세스 방식의 부모 프로세스는 그리지 않는다.',
+    loop: '옅은 칸은 Task가 머무는 곳이다. 알약은 그 단계가 끝난 뒤 Task가 있는 칸에 놓이고, 알약 모양도 그 칸의 상태를 따른다. 실행 중 칸은 루프 스레드와 이어진 한 자리라서 Task가 하나만 앉는다. 그 단계에 실행하고 다른 칸으로 간 Task는 한 단계씩 넘길 때 이 자리를 거쳐 옮겨 간다. 이벤트 루프 상자에는 루프가 직접 가진 칸(실행 중, 준비 큐, 타이머)만 넣었고, gather나 Semaphore를 기다리는 Task는 상자 밖 칸에 둔다.',
+  };
 
-  function content() { return RC.SCENES[scene] || { questions: [], observe: [], measured: [] }; }
+  function content() { return RC.SCENES[scene] || { questions: [], observe: [], measured: [], evidence: [], cards: [] }; }
+  function stepLabel(k) { return k === 'workers' ? (cfg.mode === 'processes' ? '프로세스' : '스레드') : STEPPERS[k]; }
 
-  // 다른 화면의 칸 이름을 가리키는 문장은 이 화면에 맞게 줄인다.
-  function observeList() {
-    const list = content().observe || [];
-    if (scene === 'counter') return list.filter((o) => !o.startsWith('프로세스를 늘리면'));
-    if (scene === 'loop') return list.map((o) => o.replace(' 스레드 칸은 하나이고 Task 칸이 둘이다.', ''));
-    return list;
+  function buildSceneButtons() {
+    $('#scenes').innerHTML = GROUPS.map(([key, label]) => `<div class="scene-group" role="group" aria-label="${esc(label)}">`
+      + `<span class="group-label" aria-hidden="true">${esc(label)}</span>`
+      + Object.entries(SCENES).filter(([, d]) => d.group === key).map(([k, d]) => `<button type="button" data-scene="${k}">${esc(d.label)}</button>`).join('')
+      + '</div>').join('');
   }
 
   function buildSceneText() {
@@ -1247,17 +1741,19 @@
     document.querySelectorAll('[data-scene]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.scene === scene)));
     $('#sceneTitle').textContent = d.label;
     $('#questions').innerHTML = (c.questions || []).map((q) => `<li>${esc(q)}</li>`).join('');
-    $('#observe').innerHTML = observeList().map((o) => `<li>${esc(o)}</li>`).join('');
+    $('#observe').innerHTML = (c.observe || []).map((o) => `<li>${esc(o)}</li>`).join('');
     $('#measured').innerHTML = (c.measured || []).map((m) => `<li>${esc(m)}</li>`).join('');
+    $('#sceneEv').innerHTML = evHtml(c.evidence || []);
+    $('#sceneCards').innerHTML = cardsHtml(c.cards || []);
     $('#guess').value = store.get(d.guessKey) || '';
-    $('#stripNote').textContent = STRIP_NOTE[scene];
     const states = '<li><i class="sw run"></i>실행 중</li><li><i class="sw turn"></i>차례 기다림</li><li><i class="sw event"></i>이벤트 기다림</li><li><i class="sw done"></i>끝</li>';
     const box = '<li><i class="shape box"></i>상자: 포함 관계</li>';
     $('#legend').innerHTML = isLoop()
       ? `${box}<li><i class="shape lane"></i>옅은 칸: Task가 머무는 곳</li><li><i class="shape circle"></i>OS 스레드</li><li><i class="shape pill"></i>Task</li>${states}<li><i class="sw late"></i>만료 단계 지남</li>`
       : `${box}<li><i class="shape circle"></i>OS 스레드</li>${states}`;
-    $('#boardNote').hidden = !isLoop();
-    $('#boardNote').textContent = isLoop() ? BOARD_NOTE : '';
+    const note = BOARD_NOTE[d.kind] || '';
+    $('#boardNote').hidden = !note;
+    $('#boardNote').textContent = note;
 
     const o = OPTS[scene];
     $('#opts').innerHTML = `<span id="optsLabel">${esc(o.label)}</span>`
@@ -1267,7 +1763,7 @@
     if (scene === 'counter') parts.push('<label class="chk"><input type="checkbox" id="yield"> 읽기와 쓰기 사이 time.sleep(0)</label>');
     for (const k of Object.keys(STEPPERS)) {
       if (!d.range[k]) continue;
-      parts.push(`<div class="num" data-k="${k}"><span>${STEPPERS[k]}</span><button type="button" data-d="-1" aria-label="${STEPPERS[k]} 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="${STEPPERS[k]} 늘리기">+</button></div>`);
+      parts.push(`<div class="num" data-k="${k}"><span>${stepLabel(k)}</span><button type="button" data-d="-1">−</button><output></output><button type="button" data-d="1">+</button></div>`);
     }
     parts.push(`<p class="note">${esc(CFG_NOTE[scene])}</p>`);
     $('#cfg').innerHTML = parts.join('');
@@ -1282,6 +1778,10 @@
     document.querySelectorAll('.num').forEach((row) => {
       const k = row.dataset.k;
       const [lo, hi] = range[k];
+      const label = stepLabel(k);
+      row.querySelector('span').textContent = label;
+      row.querySelector('[data-d="-1"]').setAttribute('aria-label', `${label} 줄이기`);
+      row.querySelector('[data-d="1"]').setAttribute('aria-label', `${label} 늘리기`);
       row.querySelector('output').textContent = String(cfg[k]);
       row.querySelector('[data-d="-1"]').disabled = cfg[k] <= lo;
       row.querySelector('[data-d="1"]').disabled = cfg[k] >= hi;
@@ -1289,9 +1789,10 @@
   }
 
   function setScene(key) {
-    if (!SCENES[key]) key = 'counter';
+    if (!SCENES[key]) key = DEFAULT_SCENE;
     pause();
     scene = key;
+    selected = null;
     cfg = cfgs[key] || makeCfg(key);
     cfgs[key] = cfg;
     store.set(SCENE_KEY, key);
@@ -1308,7 +1809,12 @@
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     const tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-    if (e.key === 'ArrowRight') { pause(); go(idx + 1); }
+    const sel = e.target.closest && e.target.closest('#board [data-sel]');
+    if (sel && (e.key === 'Enter' || e.key === ' ')) { select(sel.dataset.sel); e.preventDefault(); return; }
+    if (e.key === 'Escape') {
+      if (!selected) return;
+      closeDetails();
+    } else if (e.key === 'ArrowRight') { pause(); go(idx + 1); }
     else if (e.key === 'ArrowLeft') { pause(); go(idx - 1); }
     else if (e.key === 'Home') { pause(); go(0); }
     else if (e.key === 'End') { pause(); go(lastIdx()); }
@@ -1318,8 +1824,10 @@
   }
 
   function bindControls() {
+    buildSceneButtons();
     $('#speed').innerHTML = SPEEDS.map((s, i) => `<option value="${i}">${s.label}</option>`).join('');
     $('#speed').value = String(speed);
+    $('#ankiLink').href = RC.EV.anki.href;
     $('#guess').addEventListener('input', (e) => store.set(SCENES[scene].guessKey, e.target.value));
     $('#first').addEventListener('click', () => { pause(); go(0); });
     $('#prev').addEventListener('click', () => { pause(); go(idx - 1); });
@@ -1332,6 +1840,11 @@
       const c = e.target.closest('[data-step]');
       if (c) { pause(); go(+c.dataset.step); }
     });
+    $('#board').addEventListener('click', (e) => {
+      const n = e.target.closest('[data-sel]');
+      if (n) select(n.dataset.sel);
+    });
+    $('#detailsClose').addEventListener('click', closeDetails);
     document.querySelectorAll('[data-scene]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.scene !== scene) setScene(b.dataset.scene); }));
     $('#opts').addEventListener('click', (e) => {
       const b = e.target.closest('[data-opt]');
@@ -1359,7 +1872,8 @@
   bindControls();
   buildMap();
   const fromHash = location.hash.slice(1);
-  setScene(SCENES[fromHash] ? fromHash : store.get(SCENE_KEY) || 'counter');
+  const stored = store.get(SCENE_KEY);
+  setScene(SCENES[fromHash] ? fromHash : SCENES[stored] ? stored : DEFAULT_SCENE);
 
   // 관계도와 지도 칸의 너비가 바뀌면 좌표를 다시 잡는다. 화면 폭과 상관없이 글자 크기를 유지하려는 것이다.
   let boardW = $('#boardWrap').clientWidth;
@@ -1381,9 +1895,8 @@
     }).observe($('#mapWrap'));
   }
 
-  // 브라우저 확인용
-  // 확인 스크립트용: 실행 자리를 거쳐 가는 중인 알약을 바로 제 칸에 둔다.
+  // 브라우저 확인 스크립트용. settle()은 실행 자리를 거쳐 가는 중인 알약을 바로 제 칸에 둔다.
   function settle() { document.querySelectorAll('#board .tk').forEach((p) => { if (p._hopFn) { clearTimeout(p._hop); p._hopFn(); } }); }
   window.__runtimeBoard = { get scene() { return scene; }, get cfg() { return cfg; }, get idx() { return idx; }, get run() { return run; },
-    get track() { return track; }, get geo() { return geo; }, go, setConfig, setScene, settle };
+    get track() { return track; }, get geo() { return geo; }, get selected() { return selected; }, go, setConfig, setScene, settle, select };
 })();
