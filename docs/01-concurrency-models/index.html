@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python 실행 구조 관계도</title>
+<meta name="description" content="01 동시성 실험 복습용 설명 모형: 프로세스·인터프리터·OS 스레드·논리 CPU·GIL·이벤트 루프·Task·공유 객체·Lock·Semaphore의 관계와 실행·대기 상태">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-lens="exec">
+<a class="skip" href="#diagramWrap">관계도로 건너뛰기</a>
+<header class="top">
+  <div>
+    <p class="eyebrow">cs-lab · 01 동시성 모델 비교 · 복습 · <a href="viz.html">실행 애니메이션 보기 →</a></p>
+    <h1>Python 실행 구조 관계도</h1>
+  </div>
+  <p class="notice" id="ghost-note"><strong>설명용 모형</strong>단계는 이벤트의 순서를 보는 구간이며 시간 길이나 속도 비율이 아니다. 실측값은 <span class="tag t-measured">실측 기록</span> 표시가 붙은 곳에만 있다. 흐린 요소는 이 구성에서 만들지 않았거나 쓰지 않는 것이다.</p>
+</header>
+
+<main class="layout">
+  <section class="controls" aria-labelledby="controlsHead">
+    <h2 id="controlsHead">구성</h2>
+    <label class="field">장면
+      <select id="scenario" data-cfg="scenario"></select>
+    </label>
+    <label class="field">빌드와 GIL
+      <select id="gil" data-cfg="gil"></select>
+    </label>
+    <div class="field num">
+      <span id="lbl-processes">프로세스</span>
+      <div class="stepper" role="group" aria-labelledby="lbl-processes">
+        <button type="button" data-stepper="processes" data-delta="-1" aria-label="프로세스 줄이기">−</button>
+        <input id="processes" data-cfg="processes" type="number" inputmode="numeric" aria-labelledby="lbl-processes">
+        <button type="button" data-stepper="processes" data-delta="1" aria-label="프로세스 늘리기">+</button>
+      </div>
+    </div>
+    <div class="field num">
+      <span id="lbl-threads">프로세스당 작업자 스레드</span>
+      <div class="stepper" role="group" aria-labelledby="lbl-threads">
+        <button type="button" data-stepper="threads" data-delta="-1" aria-label="스레드 줄이기">−</button>
+        <input id="threads" data-cfg="threads" type="number" inputmode="numeric" aria-labelledby="lbl-threads">
+        <button type="button" data-stepper="threads" data-delta="1" aria-label="스레드 늘리기">+</button>
+      </div>
+      <small id="threadsNote" class="muted"></small>
+    </div>
+    <div class="field num">
+      <span id="lbl-cpus">논리 CPU (설명용)</span>
+      <div class="stepper" role="group" aria-labelledby="lbl-cpus">
+        <button type="button" data-stepper="cpus" data-delta="-1" aria-label="CPU 줄이기">−</button>
+        <input id="cpus" data-cfg="cpus" type="number" inputmode="numeric" aria-labelledby="lbl-cpus">
+        <button type="button" data-stepper="cpus" data-delta="1" aria-label="CPU 늘리기">+</button>
+      </div>
+    </div>
+    <div class="field num" data-field="jobs">
+      <span id="lbl-jobs">전체 작업 수</span>
+      <div class="stepper" role="group" aria-labelledby="lbl-jobs">
+        <button type="button" data-stepper="jobs" data-delta="-1" aria-label="작업 줄이기">−</button>
+        <input id="jobs" data-cfg="jobs" type="number" inputmode="numeric" aria-labelledby="lbl-jobs">
+        <button type="button" data-stepper="jobs" data-delta="1" aria-label="작업 늘리기">+</button>
+      </div>
+    </div>
+    <div class="field num" data-field="semaphore">
+      <span id="lbl-semaphore">Semaphore 상한</span>
+      <div class="stepper" role="group" aria-labelledby="lbl-semaphore">
+        <button type="button" data-stepper="semaphore" data-delta="-1" aria-label="상한 줄이기">−</button>
+        <input id="semaphore" data-cfg="semaphore" type="number" inputmode="numeric" aria-labelledby="lbl-semaphore">
+        <button type="button" data-stepper="semaphore" data-delta="1" aria-label="상한 늘리기">+</button>
+      </div>
+    </div>
+    <label class="field" data-field="loopAction">Task A의 코드
+      <select id="loopAction" data-cfg="loopAction"></select>
+    </label>
+    <label class="field" data-field="lockScope">Lock 범위
+      <select id="lockScope" data-cfg="lockScope"></select>
+    </label>
+    <label class="field check" data-field="yieldBetween">
+      <input id="yieldBetween" data-cfg="yieldBetween" type="checkbox"> 읽기와 쓰기 사이에 time.sleep(0)
+    </label>
+    <details class="presets">
+      <summary>비교해 볼 구성</summary>
+      <div class="preset-list">
+        <button type="button" data-preset='{"scenario":"py","gil":"default-on","processes":1,"threads":2,"jobs":4}'>GIL 켬 · 스레드 2개 · Python 계산</button>
+        <button type="button" data-preset='{"scenario":"py","gil":"ft-off","processes":1,"threads":4,"cpus":2,"jobs":4}'>GIL 끔 · 스레드 4개 · CPU 2개</button>
+        <button type="button" data-preset='{"scenario":"py","gil":"default-on","processes":2,"threads":1,"jobs":4}'>프로세스 2개 · 각자 GIL</button>
+        <button type="button" data-preset='{"scenario":"native","gil":"default-on","threads":3,"cpus":2,"jobs":3}'>네이티브 계산 · CPU 2개</button>
+        <button type="button" data-preset='{"scenario":"tsleep","threads":4,"cpus":1,"jobs":8}'>time.sleep() · 스레드 4개 · CPU 1개</button>
+        <button type="button" data-preset='{"scenario":"sem","jobs":6,"semaphore":2}'>Task 6개 · Semaphore 2</button>
+        <button type="button" data-preset='{"scenario":"loop","loopAction":"blocking"}'>루프 안 time.sleep()</button>
+        <button type="button" data-preset='{"scenario":"loop","loopAction":"cpu","gil":"ft-off"}'>GIL 끔 · 루프 안 CPU 계산</button>
+        <button type="button" data-preset='{"scenario":"counter","lockScope":"write"}'>카운터 · 쓰기만 Lock</button>
+        <button type="button" data-preset='{"scenario":"counter","processes":2,"lockScope":"full"}'>카운터 · 프로세스 2개</button>
+      </div>
+    </details>
+  </section>
+
+  <section class="stage" aria-label="관계도와 진행">
+    <div class="playbar" role="group" aria-label="단계 진행">
+      <button type="button" id="first" aria-label="처음 단계">처음</button>
+      <button type="button" id="prev" aria-label="이전 단계">◀ 이전</button>
+      <button type="button" id="next" class="primary" aria-label="다음 단계">다음 ▶</button>
+      <button type="button" id="last" aria-label="마지막 단계">끝</button>
+      <button type="button" id="play" aria-pressed="false">자동 진행</button>
+      <label class="speed">속도
+        <select id="speed">
+          <option value="1600">느리게</option>
+          <option value="900" selected>보통</option>
+          <option value="450">빠르게</option>
+        </select>
+      </label>
+      <p class="stepinfo" aria-hidden="true">단계 <b id="stepNum">0</b> / <span id="stepMax">0</span></p>
+    </div>
+    <p class="keys muted">키보드: → 또는 . 다음 · ← 또는 , 이전 · Home/End · P 자동 진행 · 1–4 보기 바꾸기 · Esc 선택 해제</p>
+
+    <dl class="counts" id="counts" aria-label="개수"></dl>
+
+    <div class="lens-row">
+      <div id="lenses" role="group" aria-label="보기">
+        <button type="button" data-lens="structure" aria-pressed="false">구조</button>
+        <button type="button" data-lens="exec" aria-pressed="true">실행</button>
+        <button type="button" data-lens="wait" aria-pressed="false">대기</button>
+        <button type="button" data-lens="shared" aria-pressed="false">공유 상태</button>
+      </div>
+      <p class="muted lens-help">보기를 바꿔도 구성과 단계는 그대로다.</p>
+    </div>
+
+    <div class="diagram-wrap" id="diagramWrap" tabindex="-1">
+      <div id="diagram"></div>
+      <svg id="links" aria-hidden="true"></svg>
+      <div id="tokens" aria-hidden="true"></div>
+    </div>
+
+    <ul class="legend" aria-label="범례">
+      <li><span class="box-sample"></span>바깥 상자 안에 있음 = 포함 관계</li>
+      <li><svg width="34" height="10" aria-hidden="true"><path class="rel exec" d="M1,5 L33,5"/></svg>실행 관계 (CPU→스레드, 스레드→루프, 루프→Task)</li>
+      <li><svg width="34" height="10" aria-hidden="true"><path class="rel sync" d="M1,5 L33,5"/></svg>동기화 보유 (GIL·Lock·Semaphore)</li>
+      <li><svg width="34" height="10" aria-hidden="true"><path class="rel sync wait" d="M1,5 L33,5"/></svg>대기 (무엇을 기다리는지)</li>
+      <li><svg width="34" height="10" aria-hidden="true"><path class="rel struct" d="M1,5 L33,5"/></svg>스레드 상태 연결</li>
+      <li class="tokens-key"><span class="token tk-cpu static">CPU</span><span class="token tk-gil static">GIL</span><span class="token tk-lock static">🔒 Lock</span><span class="token tk-slot static">Sem</span><span class="token tk-turn static">▶ 실행 차례</span>움직이는 조각: 지금 가진 쪽에 붙고, 비어 있으면 원래 자리로 돌아간다</li>
+      <li class="codes">상태 글자: P Python 실행 · N 네이티브 · C CPU 대기 · G GIL 대기 · S sleep 대기 · L Lock 대기 · I 루프 OS 대기 · R Task 실행 · r 준비 · T 타이머 대기 · D 예정 지남 · W 얻기 대기 · J 자식 Task 대기</li>
+    </ul>
+
+    <section class="now" aria-labelledby="eventsHead">
+      <h2 id="eventsHead">시작 전</h2>
+      <ol id="events"></ol>
+      <p id="endNote" class="end-note" hidden></p>
+    </section>
+
+    <section class="timeline-box" aria-labelledby="tlHead">
+      <h2 id="tlHead">지나간 단계</h2>
+      <p class="muted">관계도에서 일어난 일을 시간 순서로 다시 보는 보조 표다. 열 번호를 누르면 그 단계로 간다.</p>
+      <div id="timeline" class="timeline"></div>
+    </section>
+
+    <section class="guide" id="guide" aria-label="장면 안내"></section>
+  </section>
+
+  <aside class="details" id="details" aria-label="요소 설명"></aside>
+</main>
+<p id="live" class="sr" aria-live="polite"></p>
+<script src="model.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

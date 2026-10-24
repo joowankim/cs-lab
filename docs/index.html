@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cs-lab 복습 화면</title>
+<meta name="description" content="cs-lab 실험을 복습하는 설명용 화면 모음">
+<style>
+:root {
+  --bg: #f7f6f2;
+  --panel: #ffffff;
+  --ink: #1f2328;
+  --muted: #5d636c;
+  --faint: #e4e1d9;
+  --line: #b9b5ab;
+  --accent: #2f6fd6;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b;
+    --panel: #1d2026;
+    --ink: #e7e9ee;
+    --muted: #a3a9b4;
+    --faint: #2c3038;
+    --line: #5b616c;
+    --accent: #79a6ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b;
+  --panel: #1d2026;
+  --ink: #e7e9ee;
+  --muted: #a3a9b4;
+  --faint: #2c3038;
+  --line: #5b616c;
+  --accent: #79a6ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px));
+}
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.crumb { margin: 0 0 2px; color: var(--muted); font-size: 14px; }
+h1 { font-size: 26px; line-height: 1.3; margin: 0 0 8px; }
+h2 { font-size: 18px; margin: 32px 0 12px; }
+p { margin: 0 0 12px; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+.screens { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.screens a {
+  display: block;
+  padding: 14px 16px;
+  background: var(--panel);
+  border: 1px solid var(--faint);
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+.screens a:hover { border-color: var(--line); }
+.screens b { display: block; color: var(--accent); font-size: 17px; }
+.screens .file { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 6px; }
+.screens span.desc { display: block; margin-top: 2px; color: var(--muted); font-size: 15px; }
+.note { margin-top: 16px; color: var(--muted); font-size: 15px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="crumb">cs-lab</p>
+    <h1>복습 화면</h1>
+    <p>cs-lab 실험을 복습할 때 쓰는 설명용 화면을 모은다. 실험 코드와 측정 결과는 <a href="https://github.com/joowankim/cs-lab">저장소</a>에 있다.</p>
+  </header>
+
+  <section aria-labelledby="exp01">
+    <h2 id="exp01">01 동시성 모델 비교</h2>
+    <ul class="screens">
+      <li><a href="01-concurrency-models/board.html"><b>동시성 관계도<span class="file">시험판</span></b><span class="desc">전체 지도 아래에 장면 셋(공유 카운터와 Lock, 루프 지연, Task와 Semaphore)의 관계도와 모든 단계를 한눈에 보는 띠를 둔다.</span></a></li>
+      <li><a href="01-concurrency-models/viz.html"><b>동시성 실행 애니메이션</b><span class="desc">실행 그래프, 코드, 공유 상태, 로그 네 칸이 같은 단계를 함께 보여 준다.</span></a></li>
+      <li><a href="01-concurrency-models/index.html"><b>Python 실행 구조 관계도<span class="file">자세한 설명</span></b><span class="desc">장면, GIL, 프로세스·스레드·CPU 수를 바꿔 가며 요소마다 개념, 현재 상태, 관련 코드, 근거를 읽는다.</span></a></li>
+    </ul>
+    <p class="note">세 화면은 같은 모형(<code>model.js</code>)으로 움직이는 설명용 모형이다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 <code>실측 기록</code> 표시가 붙은 곳에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/01-concurrency-models/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/01-concurrency-models/README.md">화면 README</a>에 적었다.</p>
+  </section>
+</main>
+</body>
+</html>
