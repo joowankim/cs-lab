@@ -1,4 +1,4 @@
-/* 정돈한 관계도 시험판. 색은 강조(실행 중), 경고(문제), 회색 세 갈래만 쓴다. */
+/* 동시성 관계도. 색은 강조(실행 중), 경고(문제), 회색 세 갈래만 쓴다. */
 :root {
   --bg: #f7f6f2;
   --panel: #ffffff;
@@ -62,6 +62,9 @@ body {
   background: var(--bg);
   color: var(--ink);
   font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  /* 한국어 낱말을 중간에서 끊지 않는다. 한 줄보다 긴 낱말(주소 등)만 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 h1 { font-size: 22px; margin: 0; line-height: 1.3; }
 h2 { font-size: 15px; margin: 0 0 8px; }
@@ -78,8 +81,10 @@ button, select, input, textarea { font: inherit; color: inherit; }
 
 .pane, .ask { background: var(--panel); border: 1px solid var(--faint); border-radius: 10px; padding: 14px 16px; }
 
-/* 장면 고르기 */
-.scenes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+/* 장면 고르기: 장면은 무리(스레드와 프로세스, asyncio)별로 나눠 둔다 */
+.scenes { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 12px; }
+.scene-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.group-label { color: var(--muted); font-size: 13px; margin-right: 2px; }
 .scenes button {
   min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px;
   background: var(--panel); cursor: pointer; font-weight: 600;
@@ -129,7 +134,8 @@ button, select, input, textarea { font: inherit; color: inherit; }
 
 .stage { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 12px; align-items: start; }
 .board-pane { grid-column: 1; }
-.code-pane { grid-column: 2; }
+/* 오른쪽 칸에는 요소 설명과 코드를 위아래로 둔다 */
+.side { grid-column: 2; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .strip-pane { grid-column: 1 / -1; }
 
 /* 관계도 */
@@ -155,12 +161,18 @@ button, select, input, textarea { font: inherit; color: inherit; }
 #board .th.run .name { fill: var(--on-accent); }
 #board .th.event circle { stroke-dasharray: 5 4; }
 #board .th.done { opacity: .38; }
+/* 작업이 없어 실행하지 않는 작업자는 끝난 스레드처럼 흐리게 그리고 원을 잘게 끊는다 */
+#board .th.unused { opacity: .38; }
+#board .th.unused circle { stroke-dasharray: 2 3; }
+#board .thbox.unused { opacity: .5; }
 #board .th .name { font-weight: 700; font-size: 13px; }
 #board .th .why { fill: var(--muted); font-size: 12px; }
 #board.compact .th .why { font-size: 11px; }
 #board .th .local { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: var(--muted); }
 #board .th .lval { fill: var(--ink); font-weight: 700; }
 #board.stack .th .local { font-size: 11px; }
+/* 작업자 장면의 "작업 1 · 2/4"는 코드가 아니므로 고정폭 글꼴을 쓰지 않는다 */
+#board.worker .th .local { font-family: inherit; }
 #board .gil { transition: transform var(--move); }
 #board .gil rect { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; }
 #board .gil.free rect { stroke: var(--line); stroke-dasharray: 4 3; }
@@ -239,6 +251,28 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .chip.late { border-color: var(--warn); color: var(--warn); }
 .chip.more { border-style: dotted; color: var(--muted); }
 
+/* 요소 설명 */
+.details-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.details-pane .kind { margin: 0; color: var(--muted); font-size: 13px; }
+.details-pane h2 { font-size: 17px; margin: 0 0 6px; }
+.details-pane h2:focus { outline: none; }
+.details-pane h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin: 12px 0 4px; }
+.details-pane ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.details-pane li { margin: 3px 0; }
+.details-pane .note { margin-top: 4px; }
+.concept { margin: 0; font-size: 14px; }
+.why-box { margin: 0 0 8px; padding: 2px 0 2px 10px; border-left: 3px solid var(--line); font-size: 14px; }
+.why-box p { margin: 0; }
+.close { flex: none; min-width: 40px; min-height: 40px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer; }
+.sources { margin-top: 12px; }
+.sources summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.details-pane .ev, .details-pane .cards, .extra .ev, .extra .cards { list-style: none; padding-left: 0; }
+.ev li, .cards li { margin: 6px 0; }
+.ev a { overflow-wrap: anywhere; }
+.tag { display: inline-block; margin-right: 4px; padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 600; line-height: 18px; white-space: nowrap; }
+.tag.t-measured { border-color: var(--accent); color: var(--accent); }
+.cards b { margin-right: 4px; font-variant-numeric: tabular-nums; }
+
 /* 단계 띠 */
 .strip-wrap { position: relative; overflow-x: auto; padding: 2px 2px 4px; }
 .strip { display: grid; gap: 3px; width: max-content; }
@@ -275,14 +309,16 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .log li { margin: 2px 0; }
 .foot { margin-top: 16px; color: var(--muted); font-size: 13px; }
 
-/* 코드 칸이 좁아지기 전에 한 줄로 쌓는다: 관계도, 단계 띠, 코드 순서 */
+/* 코드 칸이 좁아지기 전에 한 줄로 쌓는다: 관계도, 요소 설명, 단계 띠, 코드 순서 */
 @media (max-width: 1099px) {
   .overview { grid-template-columns: minmax(0, 1fr); }
   .stage { grid-template-columns: minmax(0, 1fr); }
-  .board-pane, .code-pane, .strip-pane { grid-column: 1; }
+  .side { display: contents; }
+  .board-pane, .details-pane, .code-pane, .strip-pane { grid-column: 1; }
   .board-pane { order: 1; }
-  .strip-pane { order: 2; }
-  .code-pane { order: 3; }
+  .details-pane { order: 2; }
+  .strip-pane { order: 3; }
+  .code-pane { order: 4; }
 }
 @media (max-width: 760px) {
   body { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -298,3 +334,12 @@ button, select, input, textarea { font: inherit; color: inherit; }
   :root { --move: 0ms; }
   #board .counter.bump .value { animation: none; }
 }
+
+/* 고를 수 있는 요소. 선과 칸 이름은 누르는 자리를 가리지 않게 누르기를 받지 않는다. */
+#board [data-sel] { cursor: pointer; }
+#board .cpu-link, #board .ref, #board .loop-link, #board .lane, #board .rl, #board .seat, #board .slot, #board .thboxes text { pointer-events: none; }
+#board .loopbox, #board .sembox, #board .box { pointer-events: all; }
+#board [data-sel]:focus { outline: none; }
+#board [data-sel]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 고른 요소는 테두리를 진하게 그린다. 상태에 따른 테두리 색보다 앞서도록 선택자를 구체적으로 쓴다. */
+#board g.sel > rect:first-of-type, #board g.th.sel > circle, #board rect.sel { stroke: var(--ink); stroke-width: 2.5; }

@@ -94,10 +94,13 @@
     if job.task == "io":
         time.sleep(job.sleep_s)
         return 1`,
-    native: `# 문서의 예 — 이 실험 코드에는 없고 측정하지도 않았다.
+    native: `# 설명용 코드: hashlib 문서의 예를 바탕으로 썼다. 실험 코드에 없고 측정하지 않았다.
 import hashlib
-h = hashlib.sha256()
-h.update(data)  # 2,047바이트를 넘는 data면 계산 중 GIL을 놓는다`,
+
+def hash_job(data: bytes) -> str:
+    h = hashlib.sha256()
+    h.update(data)  # 2,047바이트를 넘는 data면 계산 중 GIL을 놓는다
+    return h.hexdigest()`,
     asyncio: `def run_asyncio(jobs, workers, job_fn):
     async def run_all():
         semaphore = asyncio.Semaphore(workers)
@@ -133,8 +136,7 @@ async def compute(work: LoopWork) -> int:
     counterLocked: `def increment_candidate(counter, lock, yield_between):
     with lock:
         increment_unlocked(counter, lock, yield_between)`,
-    counterWriteOnly: `# 실험에서 실행하지 않은 변형(설명용)
-def increment_write_only(counter, lock, yield_between):
+    counterWriteOnly: `def increment_write_only(counter, lock, yield_between):
     previous = counter.completed
     if yield_between:
         time.sleep(0)
@@ -159,7 +161,6 @@ def increment_write_only(counter, lock, yield_between):
       ],
       evidence: ['readmeCpu48', 'cpuData', 'readmeGilCpu', 'gilCpuData', 'readmeSwitch'],
       cards: ['01-003', '01-004', '01-006', '01-008', '01-009', '01-010', '01-011', '01-020'],
-      code: ['countPrimes', 'threads'],
     },
     native: {
       observe: [
@@ -171,7 +172,6 @@ def increment_write_only(counter, lock, yield_between):
       measured: ['이 실험은 GIL을 해제하는 네이티브 계산을 측정하지 않았다. hashlib 예는 문서로 확인한 내용이다.'],
       evidence: ['readmeNative', 'docDetach', 'docHashlib'],
       cards: ['01-012'],
-      code: ['native'],
     },
     tsleep: {
       observe: [
@@ -186,7 +186,6 @@ def increment_write_only(counter, lock, yield_between):
       ],
       evidence: ['readmeIo', 'ioData', 'readmeGilIo', 'gilIoData', 'srcSleep'],
       cards: ['01-013', '01-014', '01-034'],
-      code: ['runJob', 'threads'],
     },
     sem: {
       observe: [
@@ -202,11 +201,10 @@ def increment_write_only(counter, lock, yield_between):
       ],
       evidence: ['readmeTrace', 'traceData', 'readmeIo', 'srcLocks', 'docSemaphore'],
       cards: ['01-016', '01-017', '01-021', '01-022'],
-      code: ['asyncio', 'asyncJob'],
     },
     loop: {
       observe: [
-        'A와 B는 같은 OS 스레드에서 돈다. 스레드 칸은 하나이고 Task 칸이 둘이다.',
+        'A와 B는 같은 OS 스레드에서 돈다.',
         'A가 time.sleep()을 부르면 스레드 전체가 대기한다. B의 예정이 지나도 루프가 확인하지 못한다.',
         'A가 await asyncio.sleep()으로 기다리면 A만 중단하고 루프가 B를 실행한다.',
         'A가 중단 없이 계산하면 GIL을 꺼도 B는 A가 끝난 뒤에 재개한다. GIL 교대와 Task 교대는 다른 규칙이다.',
@@ -219,14 +217,12 @@ def increment_write_only(counter, lock, yield_between):
       ],
       evidence: ['readmeLoop', 'loopData', 'readmeLoopExplain', 'readmeLoopGil', 'loopLab'],
       cards: ['01-015', '01-017', '01-018', '01-019', '01-020', '01-037', '01-038'],
-      code: ['loop'],
     },
     counter: {
       observe: [
         '공유 값과 스레드마다의 지역 변수 previous를 따로 본다. 두 스레드가 같은 이전 값을 읽으면 쓰기가 차례로 일어나도 증가가 유실된다.',
         'Lock 범위를 "쓰기만"과 "읽기부터 쓰기까지"로 바꿔 결과를 비교한다.',
         'GIL은 읽기·쓰기 묶음을 보호하지 않는다. GIL을 꺼도, sleep(0)을 빼도 결과가 어떻게 되는지 본다.',
-        '프로세스를 늘리면 카운터와 Lock이 프로세스마다 따로 생긴다. 일반 Python 객체는 자동으로 공유되지 않는다.',
       ],
       questions: ['"쓰기만 Lock" 구성에서도 최종값이 기대값보다 작아지는 순서는?', '이 순서가 1,000번 실행에서 한 번도 나오지 않았다면 안전하다고 할 수 있을까?'],
       measured: [
@@ -235,8 +231,135 @@ def increment_write_only(counter, lock, yield_between):
       ],
       evidence: ['readmeCounter', 'counterData', 'counterCode', 'readmeLockApi', 'docLockWith'],
       cards: ['01-023', '01-024', '01-025', '01-027'],
-      code: ['counterUnlocked', 'counterLocked'],
     },
+  };
+
+  // 관계도 요소의 설명. 요소를 고르면 설명 칸에 나온다. 지금 상태는 board.js가 단계마다 만든다.
+  // {SWITCH_WAIT}는 model.js의 SWITCH_WAIT 값으로 바꿔 적는다.
+  const ELEMENTS = {
+    cpu: {
+      kind: '하드웨어 실행 자원',
+      concept: 'OS 스레드를 실제로 실행하는 자원이다. 같은 순간에 실행할 수 있는 스레드 수의 한도이지, 만들 수 있는 스레드 수의 한도가 아니다.',
+      props: [
+        '논리 CPU는 물리 코어 수와 같지 않을 수 있다. 실험 장비(Apple M2 Pro)는 논리 CPU 12개였고, 이 화면의 CPU 수는 설명용 설정이다.',
+        'OS 스케줄러가 실행 가능한 OS 스레드에 CPU를 배정한다. GIL이나 Lock, time.sleep()을 기다리는 스레드는 실행 가능 상태가 아니므로 배정하지 않는다.',
+        'OS가 스레드를 CPU에서 내리는 것과 CPython이 GIL을 놓는 것은 다른 일이다. CPU를 쓰는지와 GIL을 쥐었는지는 따로 본다. GIL을 놓은 네이티브 계산도 CPU를 쓴다.',
+        '이 모형은 가장 오래 실행하지 않은 스레드부터 고르고, 그 스레드가 직전에 쓴 CPU가 비어 있으면 그 CPU를 다시 준다. 실제 OS 정책을 재현하지 않는다.',
+      ],
+      ev: ['readmeEnv', 'readmeThreads'],
+      cards: ['01-003'],
+    },
+    process: {
+      kind: '실행 환경의 자원 경계',
+      concept: 'OS가 관리하는 실행 환경이다. 주소 공간과 자원을 가지며, 그 안에 OS 스레드와 CPython 인터프리터가 있다.',
+      props: [
+        '이 화면은 프로세스마다 인터프리터 하나와 그 인터프리터의 GIL을 둔다. 실험의 ProcessPoolExecutor 구성과 같다.',
+        '한 프로세스의 GIL은 다른 프로세스의 Python 실행을 막지 않는다.',
+        '일반 Python 객체는 프로세스끼리 자동으로 공유되지 않는다. 주고받으려면 전달이나 공유 메모리 같은 명시적인 수단이 필요하다.',
+        '프로세스와 풀의 생성, 작업 전달, 결과 수집, 종료는 이 모형에 넣지 않았다. 실험은 이 비용을 따로 재지 않았다.',
+      ],
+      ev: ['readmeCpu48', 'cpuData', 'docMp'],
+      cards: ['01-006'],
+    },
+    interp: {
+      kind: 'Python의 실행 문맥과 상태',
+      concept: 'Python 실행 상태(모듈, 객체 등)를 관리하는 런타임 단위다. OS 스레드는 스레드 상태(PyThreadState)를 통해 인터프리터에 연결되어 Python 코드를 실행한다.',
+      props: [
+        '프로세스와 같은 것이 아니다. 한 프로세스에 인터프리터를 여러 개 둘 수 있고, 각자 GIL을 쓰거나 메인 인터프리터의 GIL을 함께 쓸 수 있다. 이 화면은 그 구성을 그리지 않는다.',
+        '스레드가 인터프리터 안에 고정 소속된 것이 아니라, 스레드 상태의 interp 포인터로 연결된다.',
+        '인터프리터가 쓰는 GIL 참조는 하나다. 같은 인터프리터의 스레드들은 그 GIL을 함께 쓴다.',
+      ],
+      ev: ['readmeGilSource', 'srcPystate', 'docSubinterp'],
+      cards: ['01-005', '01-007'],
+    },
+    gil: {
+      kind: 'Python 실행에 대한 제약',
+      concept: 'GIL을 켠 구성에서 그 인터프리터의 Python 바이트코드를 실행하려면 쥐어야 하는 잠금이다. CPU 사용 권한이 아니다.',
+      props: [
+        '같은 인터프리터에서 Python을 실행하는 스레드를 한 번에 하나로 제한한다. 다른 프로세스나 GIL을 놓은 네이티브 계산은 막지 않는다.',
+        '계산 도중에도 교대한다. 기다리는 스레드가 간격 동안 교대를 보지 못하면 쥔 스레드에 해제 요청을 표시하고, 쥔 스레드가 확인 지점에서 요청을 처리해 GIL을 놓는다.',
+        '요청 간격은 이 모형에서 {SWITCH_WAIT}단계로 줄였다. 실험 환경에서 읽은 sys.getswitchinterval() 0.005초는 설정값이며 실제 교대 시각을 잰 값이 아니다.',
+        'time.sleep(), GIL을 놓는 네이티브 계산, Lock 대기, 이벤트 루프의 OS 대기에서는 명시적으로 놓는다.',
+        '공유 값을 보호하려고 코드에서 거는 Lock과 다르다. GIL은 읽기, 계산, 쓰기 묶음을 하나로 보호하지 않는다.',
+      ],
+      ev: ['readmeSwitch', 'srcGil', 'srcBytecodes', 'docSwitch', 'docFree'],
+      cards: ['01-008', '01-009', '01-010', '01-011'],
+    },
+    thread: {
+      kind: 'OS가 실행하는 단위',
+      concept: 'OS가 CPU에서 실행시키는 단위다. CPython의 threading.Thread는 OS 스레드 하나에 대응하며, CPython은 그 스레드가 Python을 실행하기 위한 스레드 상태를 함께 관리한다.',
+      props: [
+        '논리 CPU 수보다 많이 만들 수 있다. 같은 순간에 실행되는 수만 CPU 수로 제한된다.',
+        'CPU에서 실행 중인지, GIL을 쥐었는지, 무엇을 기다리는지를 따로 본다.',
+        '이벤트 루프 장면에서는 이 스레드 하나가 루프와 모든 Task의 코드를 실행한다.',
+      ],
+      ev: ['readmeThreads', 'srcThread', 'docThreads'],
+      cards: ['01-002', '01-003'],
+    },
+    loop: {
+      kind: '프로그램 수준의 비동기 실행 관리',
+      concept: '자신이 실행되는 OS 스레드에서 준비된 Task와 콜백을 실행하는 코드다. 스레드 풀의 관리자가 아니다.',
+      props: [
+        '실행 중인 Task를 강제로 멈추지 않는다. Task가 미완료 대기에서 실행을 중단하거나 끝나야 실행 흐름이 루프로 돌아온다.',
+        '루프로 돌아오면 만료된 타이머를 처리해 해당 Task를 준비 상태로 바꾸고, 준비된 Task를 차례로 실행한다.',
+        '실행할 Task가 없으면 다음 타이머까지 OS 대기에 들어간다.',
+        'GIL을 꺼도 루프 스레드는 하나다. GIL 교대와 Task 교대는 다른 규칙이다.',
+      ],
+      ev: ['docAsyncioThreads', 'srcBase', 'readmeAsyncioCpu', 'readmeTrace'],
+      cards: ['01-015', '01-018', '01-019'],
+    },
+    sem: {
+      kind: '프로그램이 거는 진입 제한',
+      concept: 'async with 블록에 들어가 아직 나오지 않은 Task 수의 상한이다. Task 총개수나 OS 스레드 수가 아니다.',
+      props: [
+        '내부 카운터가 0보다 크면 진입(acquire)의 await가 중단 없이 바로 이어진다. 카운터가 0일 때만 Task가 중단하고 기다린다.',
+        '블록을 나가며 세마포어를 반납하면(release) 기다리던 Task 하나가 깨어나 세마포어를 얻고 준비 상태가 된다.',
+        '기다리는 것은 Task 하나다. 루프 스레드는 다른 준비된 Task를 실행한다.',
+      ],
+      ev: ['docSemaphore', 'srcLocks', 'readmeTrace'],
+      cards: ['01-016', '01-021', '01-022'],
+    },
+    counter: {
+      kind: '프로그램이 보호할 대상',
+      concept: '같은 프로세스의 스레드들이 함께 읽고 쓰는 공유 객체다. 스레드마다 읽어 둔 지역 변수 previous는 따로 있다.',
+      props: [
+        '두 스레드가 같은 이전 값을 읽으면, 쓰기가 차례로 일어나도 증가가 유실된다. Python 코드를 동시에 실행하지 않아도 생긴다.',
+        '다른 프로세스의 카운터는 별개 객체다. 프로세스를 늘려도 자동으로 공유되지 않는다. 이 장면은 프로세스 하나만 그린다.',
+        '이 모형이 보여 주는 순서는 가능한 순서 하나다. 발생 확률을 뜻하지 않는다.',
+      ],
+      ev: ['readmeCounter', 'counterData', 'counterCode'],
+      cards: ['01-023', '01-024', '01-027'],
+    },
+    lock: {
+      kind: '사용자가 거는 동기화',
+      concept: '코드에서 정한 구간을 한 번에 한 스레드만 실행하게 하는 threading.Lock이다. GIL과 별개다.',
+      props: [
+        '보호 범위는 코드가 정한다. 읽기부터 쓰기까지 같은 Lock으로 감싸야 그 사이에 다른 증가가 끼어들지 못한다.',
+        'Lock을 기다리는 스레드는 GIL을 놓고 기다린다.',
+        'with 블록은 정상 반환이나 예외에서도 Lock을 해제한다.',
+        '이 모형은 해제 때 기다리던 첫 스레드가 넘겨받게 했다. 실제 Lock은 어느 스레드가 먼저 진행할지 정하지 않는다.',
+      ],
+      ev: ['readmeLockApi', 'docLock', 'docLockWith'],
+      cards: ['01-024', '01-025'],
+    },
+    task: {
+      kind: '코루틴의 실행·중단·재개를 관리하는 객체',
+      concept: 'Task는 OS 스레드가 아니다. GIL을 얻는 것은 루프 스레드이고, Task끼리 GIL을 넘겨받지 않는다.',
+      props: [
+        'await asyncio.sleep()은 타이머를 등록하고 이 Task만 중단한다. 다른 작업자 스레드에 대기를 맡기지 않는다.',
+        'await가 항상 중단하는 것은 아니다. 기다릴 대상이 이미 준비돼 있으면 중단 없이 이어진다.',
+        '타이머가 만료돼도 루프가 그 타이머를 처리하고 이 Task를 실행해야 재개된다.',
+      ],
+      ev: ['srcTasks', 'readmeLoopExplain', 'docAsyncioThreads'],
+      cards: ['01-015', '01-016', '01-017'],
+    },
+  };
+
+  // 요소를 그렸지만 이 구성에서 쓰지 않는 이유
+  const UNUSED = {
+    nojob: { text: '작업 수가 작업자 수보다 적어 이 작업자에게 줄 작업이 없다. 이 모형은 이런 작업자를 흐리게 그리고 실행하지 않는다. ThreadPoolExecutor는 작업을 제출할 때 쉬는 스레드가 없으면 상한까지 스레드를 늘리므로, 실제 풀은 이 스레드를 만들지 않을 수 있다.', ev: ['docExecutor'] },
+    'nojob-proc': { text: '작업 수가 작업자 수보다 적어 이 프로세스에 줄 작업이 없다. 이 모형은 이런 작업자를 흐리게 그리고 실행하지 않는다. 실제 ProcessPoolExecutor가 이 프로세스를 만드는지는 이 실험에서 확인하지 않았다.', ev: [] },
+    'lock-none': { text: 'Lock 범위가 "없음"이다. 실험의 counter_lab.py는 모든 함수에 같은 Lock 객체를 넘기지만, 락 없는 원본 함수는 그 Lock을 획득하지 않는다.', ev: [] },
   };
 
   const CARDS = {
@@ -271,5 +394,5 @@ def increment_write_only(counter, lock, yield_between):
     '01-038': 'B의 첫 재개 지연 중앙값이 A 없음 0.49ms, 비동기 대기 1.16ms였다. 10ms 기준을 만족하는가?',
   };
 
-  root.RuntimeContent = { EV, TYPE_LABEL, CODE, SCENES, CARDS };
+  root.RuntimeContent = { EV, TYPE_LABEL, CODE, SCENES, ELEMENTS, UNUSED, CARDS };
 })(typeof self !== 'undefined' ? self : this);

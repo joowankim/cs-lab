@@ -1,5 +1,5 @@
 /*
- * Python 실행 구조 관계도의 설명용 실행 모형.
+ * 동시성 관계도의 설명용 실행 모형.
  *
  * 한 단계는 "관찰 구간" 하나다. 단계 수는 실제 시간·비율이 아니며 실측값과 비교하지 않는다.
  * 규칙은 CPython 3.14.2 소스·공식 문서와 실험 README의 기록에 근거해 단순화했다.
@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = '2026-10-24.1';
+  const VERSION = '2026-10-24.2';
 
   const SCENARIOS = {
     py: { kind: 'threads', label: '스레드: 순수 Python 계산' },
@@ -42,7 +42,8 @@
   };
 
   // 설명용 길이(단계 수). 실제 처리 시간과 비례하지 않는다.
-  const UNITS = { pyJob: 4, native: 3, sleep: 3, asyncSleep: 3, loopWait: 4, loopCpu: 5, beatPeriod: 2, beats: 2 };
+  // time.sleep() 대기는 작업자 4개가 하나씩 대기에 들어가도 네 대기가 모두 겹치도록 Python 구간(1단계)보다 길게 둔다.
+  const UNITS = { pyJob: 4, native: 3, sleep: 5, asyncSleep: 3, loopWait: 4, loopCpu: 5, beatPeriod: 2, beats: 2 };
   // GIL을 기다린 스레드가 이 단계 수만큼 교대를 보지 못하면 보유 스레드에 해제 요청을 표시한다.
   // CPython의 switch interval(기본 0.005초)을 시간으로 재현한 값이 아니다.
   const SWITCH_WAIT = 2;
@@ -790,25 +791,6 @@
     return { cfg: s.cfg, views, finished: s.done, state: s };
   }
 
-  // 요소 목록과 사용 여부. 관계도와 설명 창이 같은 목록을 쓴다.
-  function elements(cfg) {
-    const kind = SCENARIOS[cfg.scenario].kind;
-    const gm = GIL_MODES[cfg.gil];
-    const list = [{ id: 'sched', type: 'scheduler', used: true }];
-    for (let c = 0; c < cfg.cpus; c++) list.push({ id: `cpu-${c}`, type: 'cpu', idx: c, used: true });
-    for (let p = 0; p < cfg.processes; p++) {
-      list.push({ id: `p${p}`, type: 'process', p, used: true });
-      list.push({ id: `p${p}-interp`, type: 'interp', p, used: true });
-      list.push({ id: `p${p}-gil`, type: 'gil', p, used: gm.active, reason: gm.active ? null : 'gil-off' });
-      list.push({ id: `p${p}-loop`, type: 'loop', p, used: kind === 'loop', reason: kind === 'loop' ? null : 'no-loop' });
-      list.push({ id: `p${p}-sem`, type: 'sem', p, used: cfg.scenario === 'sem', reason: cfg.scenario === 'sem' ? null : (kind === 'loop' ? 'no-sem-loop' : 'no-loop') });
-      list.push({ id: `p${p}-counter`, type: 'counter', p, used: kind === 'counter', reason: kind === 'counter' ? null : 'no-counter' });
-      const lockUsed = kind === 'counter' && cfg.lockScope !== 'none';
-      list.push({ id: `p${p}-lock`, type: 'lock', p, used: lockUsed, reason: lockUsed ? null : (kind === 'counter' ? 'lock-none' : 'no-counter') });
-    }
-    return list;
-  }
-
   return { VERSION, SCENARIOS, GIL_MODES, LOOP_ACTIONS, LOCK_SCOPES, UNITS, SWITCH_WAIT, LIMITS, DEFAULT_CONFIG,
-    normalizeConfig, createState, simulate, elements, josa };
+    normalizeConfig, createState, simulate, josa };
 });

@@ -72,7 +72,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 }
 .screens a:hover { border-color: var(--line); }
 .screens b { display: block; color: var(--accent); font-size: 17px; }
-.screens .file { color: var(--muted); font-size: 13px; font-weight: 400; margin-left: 6px; }
 .screens span.desc { display: block; margin-top: 2px; color: var(--muted); font-size: 15px; }
 .note { margin-top: 16px; color: var(--muted); font-size: 15px; }
 </style>
@@ -88,11 +87,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   <section aria-labelledby="exp01">
     <h2 id="exp01">01 동시성 모델 비교</h2>
     <ul class="screens">
-      <li><a href="01-concurrency-models/board.html"><b>동시성 관계도<span class="file">시험판</span></b><span class="desc">전체 지도 아래에 장면 셋(공유 카운터와 Lock, 루프 지연, Task와 Semaphore)의 관계도와 모든 단계를 한눈에 보는 띠를 둔다.</span></a></li>
-      <li><a href="01-concurrency-models/viz.html"><b>동시성 실행 애니메이션</b><span class="desc">실행 그래프, 코드, 공유 상태, 로그 네 칸이 같은 단계를 함께 보여 준다.</span></a></li>
-      <li><a href="01-concurrency-models/index.html"><b>Python 실행 구조 관계도<span class="file">자세한 설명</span></b><span class="desc">장면, GIL, 프로세스·스레드·CPU 수를 바꿔 가며 요소마다 개념, 현재 상태, 관련 코드, 근거를 읽는다.</span></a></li>
+      <li><a href="01-concurrency-models/index.html"><b>동시성 관계도</b><span class="desc">전체 지도 아래에 장면 여섯(Python 계산, 네이티브 계산, time.sleep() 대기, 공유 카운터와 Lock, 루프 지연, Task와 Semaphore)의 관계도, 코드, 모든 단계를 한눈에 보는 띠를 둔다. 관계도의 요소를 누르면 개념, 지금 상태, 근거가 나온다.</span></a></li>
     </ul>
-    <p class="note">세 화면은 같은 모형(<code>model.js</code>)으로 움직이는 설명용 모형이다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 <code>실측 기록</code> 표시가 붙은 곳에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/01-concurrency-models/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/01-concurrency-models/README.md">화면 README</a>에 적었다.</p>
+    <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 "실험에서 잰 값" 칸과 <code>실측 기록</code> 표시가 붙은 근거에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/01-concurrency-models/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/01-concurrency-models/README.md">화면 README</a>에 적었다.</p>
   </section>
 </main>
 </body>
