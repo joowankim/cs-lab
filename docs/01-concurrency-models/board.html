@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>동시성 관계도</title>
+<meta name="description" content="01 동시성 실험 복습용 시험판: 전체 지도 하나와 장면별 관계도(공유 카운터와 Lock, 루프 지연, Task와 Semaphore)로 같은 모형이 장면마다 어떻게 움직이는지 보여 주는 설명용 화면">
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="crumb">cs-lab · 01 동시성 모델 비교 · 정돈한 화면 시험판</p>
+    <h1>동시성 관계도</h1>
+  </div>
+  <nav class="links" aria-label="다른 화면">
+    <a id="linkViz" href="viz.html">실행 애니메이션</a>
+    <a id="linkIndex" href="index.html">자세한 설명</a>
+  </nav>
+</header>
+
+<div class="scenes" role="group" aria-label="장면">
+  <button type="button" data-scene="counter">공유 카운터와 Lock</button>
+  <button type="button" data-scene="loop">루프 지연</button>
+  <button type="button" data-scene="sem">Task와 Semaphore</button>
+</div>
+
+<div class="overview">
+  <section class="pane map-pane" aria-labelledby="mapTitle">
+    <h2 id="mapTitle">전체 지도 <span class="muted">진하게 그린 부분이 이 장면에 나온다</span></h2>
+    <div class="map-body">
+      <div id="mapWrap" class="map-wrap"><svg id="map" role="img" aria-label="전체 지도"></svg></div>
+      <div class="counts-box">
+        <h3>이 장면의 개수</h3>
+        <dl id="counts" class="counts"></dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="ask" aria-labelledby="askTitle">
+    <h2 id="askTitle">먼저 생각해 볼 질문</h2>
+    <ol id="questions"></ol>
+    <label class="guess">내 예상 <textarea id="guess" rows="2" placeholder="재생하기 전에 적어 두기"></textarea></label>
+  </section>
+</div>
+
+<div class="controls">
+  <div class="transport" role="group" aria-label="단계 이동">
+    <button type="button" id="first" aria-label="처음 단계" title="처음 (Home)">⏮</button>
+    <button type="button" id="prev" aria-label="이전 단계" title="이전 (←)">◀</button>
+    <button type="button" id="play" class="play" aria-pressed="false" title="재생/멈춤 (Space)">▶ 재생</button>
+    <button type="button" id="next" aria-label="다음 단계" title="다음 (→)">▶▏</button>
+    <button type="button" id="last" aria-label="마지막 단계" title="끝 (End)">⏭</button>
+    <label class="speed">속도 <select id="speed"></select></label>
+  </div>
+  <div class="scrub">
+    <input type="range" id="scrub" min="0" max="0" value="0" aria-label="단계">
+    <span class="stepinfo">단계 <b id="stepNum">0</b> / <span id="stepMax">0</span></span>
+  </div>
+  <div id="opts" class="scope" role="group" aria-labelledby="optsLabel"></div>
+</div>
+
+<main class="stage">
+  <section class="pane board-pane" aria-labelledby="sceneTitle">
+    <h2 id="sceneTitle">관계도</h2>
+    <div id="boardWrap" class="board-wrap"><svg id="board" role="img" aria-label="관계도"></svg></div>
+    <p id="caption" class="caption"></p>
+    <details id="more" class="more" hidden><summary></summary><ul></ul></details>
+    <ul id="legend" class="legend" aria-label="표시 뜻"></ul>
+    <p id="boardNote" class="note" hidden></p>
+  </section>
+
+  <section class="pane code-pane" aria-labelledby="codeTitle">
+    <h2 id="codeTitle">코드</h2>
+    <ol id="code" class="code"></ol>
+    <p id="codeNote" class="note"></p>
+  </section>
+
+  <section class="pane strip-pane" aria-labelledby="stripTitle">
+    <h2 id="stripTitle">모든 단계 <span class="muted">칸을 누르면 그 단계로 간다</span></h2>
+    <div class="strip-wrap"><div id="strip" class="strip"></div></div>
+    <p id="stripNote" class="note"></p>
+  </section>
+</main>
+
+<section class="extra">
+  <details>
+    <summary>구성 더 바꾸기</summary>
+    <div id="cfg" class="cfg"></div>
+  </details>
+  <details>
+    <summary>볼 것</summary>
+    <ul id="observe"></ul>
+  </details>
+  <details>
+    <summary>실험에서 잰 값 (모형과 별개)</summary>
+    <ul id="measured"></ul>
+  </details>
+  <details>
+    <summary>이 단계까지의 기록</summary>
+    <ol id="log" class="log"></ol>
+  </details>
+</section>
+
+<footer class="foot">설명용 모형이다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 "실험에서 잰 값" 칸에만 적었다.</footer>
+<p id="live" class="sr" aria-live="polite"></p>
+<script src="model.js"></script>
+<script src="content.js"></script>
+<script src="board.js"></script>
+</body>
+</html>

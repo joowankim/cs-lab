@@ -1,0 +1,300 @@
+/* 정돈한 관계도 시험판. 색은 강조(실행 중), 경고(문제), 회색 세 갈래만 쓴다. */
+:root {
+  --bg: #f7f6f2;
+  --panel: #ffffff;
+  --ink: #1f2328;
+  --muted: #5d636c;
+  --line: #b9b5ab;
+  --faint: #e4e1d9;
+  --accent: #2f6fd6;
+  --accent-weak: #dce7fa;
+  --warn: #b4441c;
+  --warn-weak: #f8e3da;
+  --on-accent: #ffffff;
+  --on-warn: #ffffff;
+  --lane: #f2f0ea;
+  --move: 280ms;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b;
+    --panel: #1d2026;
+    --ink: #e7e9ee;
+    --muted: #a3a9b4;
+    --line: #5b616c;
+    --faint: #2c3038;
+    --accent: #79a6ff;
+    --accent-weak: #22324f;
+    --warn: #ff9466;
+    --warn-weak: #4a2a1f;
+    --on-accent: #0f1726;
+    --on-warn: #24110a;
+    --lane: #171a1e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b;
+  --panel: #1d2026;
+  --ink: #e7e9ee;
+  --muted: #a3a9b4;
+  --line: #5b616c;
+  --faint: #2c3038;
+  --accent: #79a6ff;
+  --accent-weak: #22324f;
+  --warn: #ff9466;
+  --warn-weak: #4a2a1f;
+  --on-accent: #0f1726;
+  --on-warn: #24110a;
+  --lane: #171a1e;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding-block: 16px 32px;
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif;
+}
+h1 { font-size: 22px; margin: 0; line-height: 1.3; }
+h2 { font-size: 15px; margin: 0 0 8px; }
+a { color: var(--accent); }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.muted { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+.note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.crumb { margin: 0 0 2px; color: var(--muted); font-size: 13px; }
+.links { display: flex; gap: 16px; font-size: 14px; }
+
+.pane, .ask { background: var(--panel); border: 1px solid var(--faint); border-radius: 10px; padding: 14px 16px; }
+
+/* 장면 고르기 */
+.scenes { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.scenes button {
+  min-height: 40px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); cursor: pointer; font-weight: 600;
+}
+.scenes button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--panel); }
+
+/* 전체 지도와 질문 */
+.overview { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 12px; align-items: start; margin-bottom: 12px; }
+.map-body { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.map-wrap { flex: 1 1 260px; max-width: 460px; min-width: 0; }
+#map { display: block; width: 100%; height: auto; }
+#map text { fill: var(--ink); font-size: 11px; }
+#map .lbl { fill: var(--muted); }
+#map .box { fill: none; stroke: var(--line); stroke-width: 1.25; }
+#map .part { opacity: .28; transition: opacity var(--move); }
+#map .part.on { opacity: 1; }
+#map .part rect, #map .part circle { fill: var(--panel); stroke: var(--muted); stroke-width: 1.25; }
+#map .part line { stroke: var(--muted); stroke-width: 1.25; }
+.counts-box { flex: 1 1 180px; min-width: 0; }
+.counts-box h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin: 0 0 4px; }
+.counts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 14px; margin: 0; font-size: 13px; }
+.counts div { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--faint); }
+.counts dt { color: var(--muted); }
+.counts dd { margin: 0; font-weight: 600; white-space: nowrap; }
+.ask h2 { font-size: 14px; color: var(--muted); font-weight: 600; }
+.ask ol { margin: 0 0 8px; padding-left: 20px; }
+.guess { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.guess textarea { width: 100%; resize: vertical; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-bottom: 12px; }
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.transport button, .scope button, .num button {
+  min-width: 40px; min-height: 36px; padding: 4px 10px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel); cursor: pointer;
+}
+.transport button:disabled, .num button:disabled { opacity: .4; cursor: default; }
+.transport .play { min-width: 88px; font-weight: 600; }
+.transport .play[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.speed { font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; }
+.speed select, .cfg select { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 2px 6px; }
+.scrub { display: flex; align-items: center; gap: 10px; flex: 1 1 220px; min-width: 0; }
+.scrub input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.stepinfo { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.scope { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 14px; }
+.scope > span { color: var(--muted); font-size: 13px; margin-right: 2px; }
+.scope button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-weak); font-weight: 600; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 12px; align-items: start; }
+.board-pane { grid-column: 1; }
+.code-pane { grid-column: 2; }
+.strip-pane { grid-column: 1 / -1; }
+
+/* 관계도 */
+/* 관계도가 칸보다 넓을 때만 칸 안에서 옆으로 민다 */
+.board-wrap { overflow-x: auto; }
+#board { display: block; width: 100%; height: auto; max-width: 680px; margin: 0 auto; }
+#board text { fill: var(--ink); font-size: 13px; }
+#board .lbl { fill: var(--muted); font-size: 12px; }
+#board .box { fill: none; stroke: var(--line); stroke-width: 1.25; }
+/* 프로세스는 옅은 바탕, 인터프리터는 그 위에 놓인 흰 바탕. 스레드 상자는 테두리만 있는 흰 상자이고, 옅은 바탕은 Task가 머무는 칸에만 쓴다. */
+#board .box.proc { fill: var(--lane); }
+#board .box.interp { fill: var(--panel); }
+#board .thbox { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; }
+#board .cpu rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; }
+#board .cpu-link { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; transition: opacity var(--move); }
+#board .ref { stroke: var(--line); stroke-width: 1; fill: none; stroke-linecap: round; }
+#board .ref.touch { stroke: var(--accent); stroke-width: 2; }
+#board .ref.touch.lost { stroke: var(--warn); }
+#board .mk-on { fill: var(--accent); }
+#board .mk-lost { fill: var(--warn); }
+#board .th circle { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; transition: fill var(--move), stroke var(--move); }
+#board .th.run circle { fill: var(--accent); stroke: var(--accent); }
+#board .th.run .name { fill: var(--on-accent); }
+#board .th.event circle { stroke-dasharray: 5 4; }
+#board .th.done { opacity: .38; }
+#board .th .name { font-weight: 700; font-size: 13px; }
+#board .th .why { fill: var(--muted); font-size: 12px; }
+#board.compact .th .why { font-size: 11px; }
+#board .th .local { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; fill: var(--muted); }
+#board .th .lval { fill: var(--ink); font-weight: 700; }
+#board.stack .th .local { font-size: 11px; }
+#board .gil { transition: transform var(--move); }
+#board .gil rect { fill: var(--panel); stroke: var(--accent); stroke-width: 1.5; }
+#board .gil.free rect { stroke: var(--line); stroke-dasharray: 4 3; }
+#board .gil text { font-size: 12px; font-weight: 700; }
+#board .gil .req { fill: var(--warn); font-weight: 600; }
+#board .counter rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+#board .counter.changed rect { stroke: var(--accent); stroke-width: 2; }
+#board .counter.lost rect, #board .counter.wrong rect { stroke: var(--warn); stroke-width: 2; fill: var(--warn-weak); }
+#board .counter .value { font-size: 26px; font-weight: 700; }
+#board .counter.bump .value { animation: bump 600ms ease-out 1; }
+#board .lock rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; }
+#board .lock.held rect { stroke: var(--accent); stroke-width: 2; }
+#board .lock.unused { opacity: .45; }
+#board .lock.unused rect { stroke-dasharray: 4 3; }
+@keyframes bump { from { transform: scale(1.25); } to { transform: scale(1); } }
+#board .value { transform-box: fill-box; transform-origin: center; }
+/* 루프 장면: 이벤트 루프 상자, Task가 머무는 칸과 줄 이름, Task 알약, Semaphore를 얻은 Task 네모 */
+#board .loop-link { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-linecap: round; }
+#board .lane { fill: var(--lane); }
+#board .seat, #board .gil-home { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; stroke-dasharray: 4 3; }
+#board .loopbox, #board .sembox { fill: none; stroke: var(--line); stroke-width: 1.5; }
+#board .rl { fill: var(--muted); font-size: 12px; }
+#board .rl.sub, #board.compact .rl { font-size: 11px; }
+#board .tk { transition: transform var(--move); }
+#board .tk rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; transition: fill var(--move), stroke var(--move); }
+#board .tk .tn { font-size: 12px; font-weight: 700; }
+#board.compact .tk .tn { font-size: 11px; }
+#board .tk .due { font-size: 11px; fill: var(--muted); }
+#board .tk.run rect { fill: var(--accent); stroke: var(--accent); }
+#board .tk.run .tn { fill: var(--on-accent); }
+#board .tk.event rect { stroke-dasharray: 5 4; }
+#board .tk.done { opacity: .38; }
+#board .tk.late rect { stroke: var(--warn); fill: var(--warn-weak); }
+#board .tk.late .due { fill: var(--warn); font-weight: 600; }
+/* 이 단계에 실행하고 다른 칸으로 가는 알약은 실행 자리를 지나는 동안 채워 보인다 */
+#board .tk.transit { opacity: 1; }
+#board .tk.transit rect { fill: var(--accent); stroke: var(--accent); stroke-dasharray: none; }
+#board .tk.transit .tn { fill: var(--on-accent); }
+#board .slot rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; stroke-dasharray: 4 3; }
+/* Semaphore를 얻은 Task는 Task 알약과 헷갈리지 않게 각진 네모에 그리고, 얻은 Task 이름만 적는다 */
+#board .slot.held rect { fill: var(--accent-weak); stroke: var(--accent); stroke-width: 1.25; stroke-dasharray: none; }
+#board .slot text { font-size: 12px; }
+#board.compact .slot text { font-size: 11px; }
+/* 여러 단계를 건너뛸 때는 옮겨 가는 모습 없이 바로 바꾼다 */
+#board.instant * { transition: none !important; }
+
+.caption { min-height: 3em; margin: 10px 0 0; font-size: 15px; }
+.caption .result { display: block; margin-top: 4px; font-weight: 600; }
+.caption .result.bad { color: var(--warn); }
+.more { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.more ul { margin: 4px 0 0; padding-left: 18px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--panel); }
+.sw.run { background: var(--accent); border-color: var(--accent); }
+.sw.event { border-style: dashed; }
+.sw.done { opacity: .38; }
+.sw.late { border-color: var(--warn); background: var(--warn-weak); }
+.shape { display: inline-block; border: 1.5px solid var(--line); background: var(--panel); }
+.shape.circle { width: 14px; height: 14px; border-radius: 50%; }
+.shape.pill { width: 26px; height: 13px; border-radius: 7px; }
+.shape.box { width: 22px; height: 14px; border-radius: 4px; }
+.shape.lane { width: 26px; height: 14px; border-radius: 4px; border-color: transparent; background: var(--lane); }
+
+/* 코드 */
+/* 이름표는 줄 번호 왼쪽 칸에 둔다. 긴 줄은 코드 칸 전체가 옆으로 밀린다. */
+.code { list-style: none; margin: 0; padding: 0; overflow-x: auto; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.code li { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 6px; min-height: 30px; width: max-content; min-width: 100%; }
+.code li .ln { color: var(--muted); width: 1.5em; text-align: right; flex: none; }
+.code li code { white-space: pre; }
+.code li .marks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; width: var(--marks, 58px); flex: none; }
+.code .chip { font-size: 11px; padding: 3px 4px; }
+.chip { font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; padding: 4px 5px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--panel); }
+.chip.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.chip.event { border-style: dashed; }
+.chip.late { border-color: var(--warn); color: var(--warn); }
+.chip.more { border-style: dotted; color: var(--muted); }
+
+/* 단계 띠 */
+.strip-wrap { position: relative; overflow-x: auto; padding: 2px 2px 4px; }
+.strip { display: grid; gap: 3px; width: max-content; }
+/* 띠를 옆으로 밀어도 줄 이름은 왼쪽에 남긴다 */
+.strip .rh { position: sticky; left: 0; z-index: 1; background: var(--panel); font-size: 13px; color: var(--muted); padding-right: 8px; display: flex; align-items: center; white-space: nowrap; }
+.strip .ch { font-size: 11px; color: var(--muted); text-align: center; }
+.strip .c {
+  width: 30px; height: 28px; border-radius: 6px; border: 1.5px solid var(--faint);
+  display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; background: var(--panel); padding: 0;
+}
+.strip .c.run { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.strip .c.turn { border-color: var(--line); }
+.strip .c.event { border-color: var(--line); border-style: dashed; }
+.strip .c.done { opacity: .3; }
+.strip .c.lost { background: var(--warn); border-color: var(--warn); color: var(--on-warn); }
+.strip .c.late { border-color: var(--warn); background: var(--warn-weak); }
+.strip .c.none { border-color: transparent; background: transparent; }
+.strip .c.val { border-color: transparent; color: var(--muted); }
+.strip .c.val.changed { color: var(--ink); font-weight: 700; }
+.strip .c.val.bad { color: var(--warn); font-weight: 700; }
+.strip .cur { box-shadow: 0 0 0 2px var(--ink); }
+
+/* 접는 칸 */
+.extra { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 12px; }
+.extra details { background: var(--panel); border: 1px solid var(--faint); border-radius: 10px; padding: 10px 16px; }
+.extra summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.extra ul, .extra ol { margin: 8px 0 0; padding-left: 20px; font-size: 14px; }
+.cfg { display: grid; gap: 10px; margin-top: 10px; font-size: 14px; }
+.cfg label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.cfg select { max-width: 100%; min-width: 0; }
+.num { display: flex; align-items: center; gap: 8px; }
+.num span { min-width: 5.5em; }
+.num output { min-width: 1.5em; text-align: center; font-weight: 700; }
+.log li { margin: 2px 0; }
+.foot { margin-top: 16px; color: var(--muted); font-size: 13px; }
+
+/* 코드 칸이 좁아지기 전에 한 줄로 쌓는다: 관계도, 단계 띠, 코드 순서 */
+@media (max-width: 1099px) {
+  .overview { grid-template-columns: minmax(0, 1fr); }
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .board-pane, .code-pane, .strip-pane { grid-column: 1; }
+  .board-pane { order: 1; }
+  .strip-pane { order: 2; }
+  .code-pane { order: 3; }
+}
+@media (max-width: 760px) {
+  body { padding-block: 12px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .pane, .ask { padding: 12px; }
+  .controls { gap: 8px; }
+}
+@media (max-width: 480px) {
+  .code { font-size: 12px; }
+  .code li .ln { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --move: 0ms; }
+  #board .counter.bump .value { animation: none; }
+}

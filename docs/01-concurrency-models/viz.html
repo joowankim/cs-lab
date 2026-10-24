@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>동시성 실행 애니메이션</title>
+<meta name="description" content="01 동시성 실험 복습용: 프로세스·인터프리터·OS 스레드·CPU·GIL·이벤트 루프·Task·Lock·Semaphore가 한 단계씩 협력하는 모습을 코드 줄, 그래프, 공유 상태, 로그로 함께 보여 주는 설명용 모형">
+<link rel="stylesheet" href="viz.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="brand-sub">cs-lab · 01 동시성 모델 비교</span>
+    <h1>동시성 실행 애니메이션</h1>
+  </div>
+  <div class="transport" role="group" aria-label="재생">
+    <button type="button" id="first" aria-label="처음 단계" title="처음 (Home)">⏮</button>
+    <button type="button" id="prev" aria-label="이전 단계" title="이전 (←)">◀</button>
+    <button type="button" id="play" class="play" aria-pressed="false" title="재생/일시정지 (Space)">▶ 재생</button>
+    <button type="button" id="next" aria-label="다음 단계" title="다음 (→)">▶▏</button>
+    <button type="button" id="last" aria-label="마지막 단계" title="끝 (End)">⏭</button>
+    <label class="speed">속도 <input type="range" id="speed" min="0" max="4" step="1" value="2" aria-valuetext="보통"></label>
+    <span id="speedLabel" class="speed-label">보통</span>
+  </div>
+  <a class="alt-link" href="index.html">자세한 설명 화면 →</a>
+</header>
+<div class="scrub">
+  <input type="range" id="scrub" min="0" max="0" value="0" aria-label="단계 이동">
+  <span class="stepinfo">단계 <b id="stepNum">0</b> / <span id="stepMax">0</span></span>
+</div>
+
+<main class="ws">
+  <nav class="side" aria-label="장면과 구성">
+    <h2 class="pane-title">장면</h2>
+    <ul id="scenes" class="scenes"></ul>
+    <h2 class="pane-title">구성</h2>
+    <div class="cfg">
+      <label>빌드와 GIL <select id="gil" data-cfg="gil"></select></label>
+      <div class="num" data-k="processes"><span>프로세스</span><button type="button" data-d="-1" aria-label="프로세스 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="프로세스 늘리기">+</button></div>
+      <div class="num" data-k="threads"><span>프로세스당 작업자 스레드</span><button type="button" data-d="-1" aria-label="스레드 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="스레드 늘리기">+</button></div>
+      <div class="num" data-k="cpus"><span>논리 CPU</span><button type="button" data-d="-1" aria-label="CPU 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="CPU 늘리기">+</button></div>
+      <div class="num" data-k="jobs"><span>전체 작업</span><button type="button" data-d="-1" aria-label="작업 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="작업 늘리기">+</button></div>
+      <div class="num" data-k="semaphore"><span>Semaphore 상한</span><button type="button" data-d="-1" aria-label="상한 줄이기">−</button><output></output><button type="button" data-d="1" aria-label="상한 늘리기">+</button></div>
+      <label data-only="loop">Task A의 코드 <select id="loopAction" data-cfg="loopAction"></select></label>
+      <label data-only="counter">Lock 범위 <select id="lockScope" data-cfg="lockScope"></select></label>
+      <label data-only="counter" class="chk"><input type="checkbox" id="yieldBetween" data-cfg="yieldBetween"> 읽기와 쓰기 사이 time.sleep(0)</label>
+      <p id="cfgNote" class="note"></p>
+    </div>
+    <p class="model-note"><b>설명용 모형.</b> 단계는 이벤트의 순서이고 시간 길이가 아니다. 움직이는 시간도 보기 좋게 정한 값이다. 실측값은 실험 README에만 있다.</p>
+  </nav>
+
+  <section class="tracers" aria-label="실행 화면">
+    <div class="pane">
+      <div class="pane-head">
+        <h2>실행 그래프</h2>
+        <span class="legend" aria-hidden="true">
+          <i class="lg run"></i>실행 <i class="lg hold"></i>보유 <i class="lg wait"></i>대기 <i class="lg struct"></i>소속
+        </span>
+      </div>
+      <p id="caption" class="caption" aria-live="polite"></p>
+      <div class="graph-wrap"><svg id="graph" role="img" aria-label="실행 그래프"></svg></div>
+      <div id="nodeInfo" class="node-info" hidden></div>
+    </div>
+    <div class="pane">
+      <div class="pane-head"><h2>공유 상태</h2><span class="muted">이번 단계에 바뀐 칸은 강조</span></div>
+      <div id="arrays" class="arrays"></div>
+    </div>
+    <div class="pane">
+      <div class="pane-head"><h2>로그</h2><span class="muted">지금 단계까지</span></div>
+      <ol id="log" class="log"></ol>
+    </div>
+  </section>
+
+  <section class="code pane" aria-label="코드">
+    <div class="pane-head"><h2 id="codeTitle">코드</h2></div>
+    <p id="codeNote" class="note"></p>
+    <ol id="codeLines" class="code-lines"></ol>
+    <div class="code-key" aria-hidden="true"><span class="chip run">1-1</span>이 줄 실행 중 <span class="chip wait">1-2</span>이 줄에서 멈춤</div>
+  </section>
+</main>
+<p id="live" class="sr" aria-live="polite"></p>
+<script src="model.js"></script>
+<script src="viz.js"></script>
+</body>
+</html>
