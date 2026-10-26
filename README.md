@@ -27,7 +27,7 @@
 
 | # | 실험 | 상태 |
 |---|---|---|
-| 1 | [동시성 모델 비교: 스레드·프로세스·asyncio, GIL 있음/없음](experiments/01-concurrency-models/README.md) | 진행 중 (2026-10-23) |
+| 1 | [동시성 모델 비교: 스레드·프로세스·asyncio, GIL 있음/없음](experiments/01-concurrency-models/README.md) | 완료 (2026-10-23) |
 | 2 | 동기화 도구 직접 쓰기 | 예정 |
 | 3 | MySQL 격리 수준과 MVCC | 예정 |
 | 4 | MySQL 락·데드락·커넥션 풀 | 예정 |
