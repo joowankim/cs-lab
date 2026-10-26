@@ -9,3 +9,4 @@
 | 실험 | 카드 | 학습 기록 |
 |---|---|---|
 | 01 동시성 모델 비교 | [복습 카드](01-concurrency-models.md) | [실험 README](../experiments/01-concurrency-models/README.md) |
+| 02 동기화 도구 직접 쓰기 | [복습 카드](02-synchronization-primitives.md) | [실험 README](../experiments/02-synchronization-primitives/README.md) |
