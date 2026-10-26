@@ -1,0 +1,20 @@
+Thread 0x000000016ddc7000 [b_to_a] (most recent call first):
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_kernels.py", line 41 in transfer_opposite
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 94 in move
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1024 in run
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1082 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1044 in _bootstrap
+
+Thread 0x000000016cdbb000 [a_to_b] (most recent call first):
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_kernels.py", line 41 in transfer_opposite
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 94 in move
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1024 in run
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1082 in _bootstrap_inner
+  File "/opt/homebrew/Cellar/python@3.14/3.14.2/Frameworks/Python.framework/Versions/3.14/lib/python3.14/threading.py", line 1044 in _bootstrap
+
+Current thread 0x00000001f6bcde80 (most recent call first):
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 68 in watch
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 103 in run_transfer_trial
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 144 in run_spec
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 158 in child_main
+  File "/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/python/deadlock_lab.py", line 302 in <module>
