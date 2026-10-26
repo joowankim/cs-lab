@@ -11,3 +11,6 @@ target/
 
 # Node
 node_modules/
+
+# Serena
+.serena/
