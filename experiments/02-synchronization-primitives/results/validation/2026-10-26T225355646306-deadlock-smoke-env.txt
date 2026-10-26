@@ -1,0 +1,122 @@
+{
+  "started_at": "2026-10-26T22:53:55.646306+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "deadlock",
+  "validation": true,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/deadlock-lab-c7279df5fb6ca521/bin/python3 python/deadlock_lab.py --smoke",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/deadlock-lab-c7279df5fb6ca521/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "switch_interval_s": 0.005,
+  "config": {
+    "tasks": [
+      "transfer",
+      "philosophers"
+    ],
+    "trials": 2,
+    "output_dir": null,
+    "smoke": true
+  },
+  "conditions": {
+    "hang_s": 3,
+    "child_timeout_s": 60,
+    "scale": 10,
+    "balance": 1000000,
+    "db_s": 0.001,
+    "backoff_s": 0.001,
+    "philosophers": 5,
+    "meals": 100,
+    "think_s": 0.002,
+    "pick_s": 0.001,
+    "eat_s": 0.001,
+    "transfer_cases": [
+      {
+        "case": 1,
+        "transfer": "opposite",
+        "check": "db",
+        "per_thread": 1000
+      },
+      {
+        "case": 2,
+        "transfer": "opposite",
+        "check": "memory",
+        "per_thread": 1000
+      },
+      {
+        "case": 3,
+        "transfer": "opposite",
+        "check": "memory",
+        "per_thread": 100000
+      },
+      {
+        "case": 4,
+        "transfer": "ordered",
+        "check": "db",
+        "per_thread": 1000
+      },
+      {
+        "case": 5,
+        "transfer": "retry",
+        "check": "db",
+        "per_thread": 1000
+      }
+    ],
+    "philosopher_cases": [
+      {
+        "case": 1,
+        "pick": "left",
+        "waiter": 0
+      },
+      {
+        "case": 2,
+        "pick": "larger",
+        "waiter": 0
+      },
+      {
+        "case": 3,
+        "pick": "left",
+        "waiter": 4
+      }
+    ]
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "f464032230dd1003b53ed8c8d93a8f0e27925508",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n?? ../../.serena/\n?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "deadlock_lab.py": "ebcbd2a519e3877aeded29ae72f9c0652e6ef3d83ac108b68f9b02630ca32bf3",
+    "deadlock_kernels.py": "e45ed5e1d0fe0155a275d24ba16bdf2bd25379c11ed647cd9d0daafc26ec804b",
+    "release_lab.py": "b11a79f1cab8d42ab9481eb14d604dbabb6287e550c3bdaf3b5c03beb1f4a411"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  }
+}

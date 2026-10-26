@@ -1,0 +1,204 @@
+completion re-run check, experiment 02; cwd=/Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives; note: PYTHONDONTWRITEBYTECODE=1 set in the wrapper environment so existing __pycache__ is not touched
+
+$ uv run --python 3.14.2+gil python -m unittest discover -s python -p 'test_*.py' -v
+start: 2026-10-26T22:52:13.163+09:00
+--- output ---
+test_error_other_than_index_error_marks_the_trial_invalid (test_buffer_lab.BufferLabTests.test_error_other_than_index_error_marks_the_trial_invalid) ... ok
+test_if_kernel_rows_are_consistent (test_buffer_lab.BufferLabTests.test_if_kernel_rows_are_consistent) ... ok
+test_reference_take_keeps_every_worker (test_buffer_lab.BufferLabTests.test_reference_take_keeps_every_worker) ... ok
+test_summary_excludes_warmup_and_compares_pairs (test_buffer_lab.BufferLabTests.test_summary_excludes_warmup_and_compares_pairs) ... ok
+test_wakeup_with_empty_jobs_is_counted (test_buffer_lab.BufferLabTests.test_wakeup_with_empty_jobs_is_counted) ... ok
+test_while_kernel_keeps_every_worker (test_buffer_lab.BufferLabTests.test_while_kernel_keeps_every_worker) ... ok
+test_worker_death_is_recorded_in_its_phase (test_buffer_lab.BufferLabTests.test_worker_death_is_recorded_in_its_phase) ... ok
+test_child_failure_is_an_invalid_row (test_deadlock_lab.DeadlockLabTests.test_child_failure_is_an_invalid_row) ... ok
+test_child_process_returns_one_row (test_deadlock_lab.DeadlockLabTests.test_child_process_returns_one_row) ... ok
+test_each_transfer_keeps_balances_in_one_thread (test_deadlock_lab.DeadlockLabTests.test_each_transfer_keeps_balances_in_one_thread) ... ok
+test_fixed_philosophers_eat_every_meal (test_deadlock_lab.DeadlockLabTests.test_fixed_philosophers_eat_every_meal) ... ok
+test_fixed_transfers_finish_with_two_threads (test_deadlock_lab.DeadlockLabTests.test_fixed_transfers_finish_with_two_threads) ... ok
+test_forced_deadlock_is_recorded_as_hung_with_stacks (test_deadlock_lab.DeadlockLabTests.test_forced_deadlock_is_recorded_as_hung_with_stacks) ... ok
+test_forced_philosopher_deadlock_is_recorded_as_hung (test_deadlock_lab.DeadlockLabTests.test_forced_philosopher_deadlock_is_recorded_as_hung) ... ok
+test_summary_excludes_warmup (test_deadlock_lab.DeadlockLabTests.test_summary_excludes_warmup) ... ok
+test_thread_error_marks_the_trial_invalid (test_deadlock_lab.DeadlockLabTests.test_thread_error_marks_the_trial_invalid) ... ok
+test_wrong_balance_marks_the_trial_invalid (test_deadlock_lab.DeadlockLabTests.test_wrong_balance_marks_the_trial_invalid) ... ok
+test_candidate_keeps_limit_without_errors (test_release_lab.ReleaseLabTests.test_candidate_keeps_limit_without_errors) ... ok
+test_concurrent_calls_are_counted (test_release_lab.ReleaseLabTests.test_concurrent_calls_are_counted) ... ok
+test_error_outside_release_marks_the_trial_invalid (test_release_lab.ReleaseLabTests.test_error_outside_release_marks_the_trial_invalid) ... ok
+test_forced_release_of_another_threads_lock_is_an_observation (test_release_lab.ReleaseLabTests.test_forced_release_of_another_threads_lock_is_an_observation) ... ok
+test_make_slots_builds_each_tool (test_release_lab.ReleaseLabTests.test_make_slots_builds_each_tool) ... ok
+test_reference_fix_keeps_limit_without_errors (test_release_lab.ReleaseLabTests.test_reference_fix_keeps_limit_without_errors) ... ok
+test_single_double_release_is_recorded_on_the_timeout_call (test_release_lab.ReleaseLabTests.test_single_double_release_is_recorded_on_the_timeout_call) ... ok
+test_summary_excludes_warmup (test_release_lab.ReleaseLabTests.test_summary_excludes_warmup) ... ok
+test_calibration_lands_near_the_target (test_wait_lab.WaitLabTests.test_calibration_lands_near_the_target) ... ok
+test_each_wait_returns_after_ready (test_wait_lab.WaitLabTests.test_each_wait_returns_after_ready) ... ok
+test_loader_alone_and_with_waiters_are_recorded (test_wait_lab.WaitLabTests.test_loader_alone_and_with_waiters_are_recorded) ... ok
+test_summary_excludes_warmup_and_compares_to_loader_alone (test_wait_lab.WaitLabTests.test_summary_excludes_warmup_and_compares_to_loader_alone) ... ok
+test_waiter_error_marks_the_trial_invalid (test_wait_lab.WaitLabTests.test_waiter_error_marks_the_trial_invalid) ... ok
+test_wrong_check_marks_the_trial_invalid (test_wait_lab.WaitLabTests.test_wrong_check_marks_the_trial_invalid) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 3.367s
+
+OK
+--- end output ---
+exit: 0
+end: 2026-10-26T22:52:16.735+09:00
+duration_s: 3.57
+
+$ uv run --python 3.14.2+gil python/release_lab.py --smoke
+start: 2026-10-26T22:52:16.804+09:00
+--- output ---
+환경: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225216898745-release-smoke-env.txt
+결과: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225216898745-release-smoke-python-3.14.2.jsonl
+작은 입력의 실행·저장 검증 완료. 오류 빈도나 수정 완료를 판단하지 않는다.
+code      kind      trials max_in_flight(median [min~max]) errors(timeout/other) second_release(raised/ok) release_errors(count:trials) final_state
+buggy     bounded        2 7 [7~7] 0/6 0/6 {3: 2} {'4': 2}
+buggy     lock           2 4 [4~4] 0/6 0/6 {3: 2} {'unlocked': 2}
+buggy     rlock          2 1 [1~1] 6/0 6/0 {3: 2} {'unlocked': 2}
+buggy     semaphore      2 7 [7~7] 0/0 0/6 {0: 2} {'7': 2}
+candidate bounded        2 4 [4~4] 0/0 0/0 {0: 2} {'4': 2}
+candidate lock           2 1 [1~1] 0/0 0/0 {0: 2} {'unlocked': 2}
+candidate rlock          2 1 [1~1] 0/0 0/0 {0: 2} {'unlocked': 2}
+candidate semaphore      2 4 [4~4] 0/0 0/0 {0: 2} {'4': 2}
+--- end output ---
+exit: 0
+end: 2026-10-26T22:52:45.104+09:00
+duration_s: 28.31
+
+$ uv run --python 3.14.2+gil python/buffer_lab.py --smoke
+start: 2026-10-26T22:52:45.186+09:00
+--- output ---
+환경: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225245285848-buffer-smoke-env.txt
+결과: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225245285848-buffer-smoke-python-3.14.2.jsonl
+작은 입력의 실행·저장 검증 완료. 남는 작업자 수나 처리 시간을 판단하지 않는다.
+#  take  wake       workers trials alive_after_uploads(pattern:trials) index_errors(count:trials) wall_s(median [min~max]) empty_wakeups(median [min~max])
+1  if    notify           2      2 {'1·1·1': 2} {1: 2} 0.469 [0.468~0.470] 1 [1~1]
+2  if    notify_all       2      2 {'1·1·1': 2} {1: 2} 0.466 [0.457~0.474] 1 [1~1]
+3  if    notify           4      2 {'3·2·1': 2} {3: 2} 0.483 [0.481~0.486] 3 [3~3]
+4  if    notify_all       4      2 {'1·1·1': 2} {3: 2} 0.488 [0.483~0.494] 3 [3~3]
+5  while notify           2      2 {'2·2·2': 2} {0: 2} 0.235 [0.234~0.237] 3 [3~3]
+6  while notify_all       2      2 {'2·2·2': 2} {0: 2} 0.234 [0.232~0.236] 3 [3~3]
+7  while notify           4      2 {'4·4·4': 2} {0: 2} 0.121 [0.120~0.122] 3 [3~3]
+8  while notify_all       4      2 {'4·4·4': 2} {0: 2} 0.123 [0.123~0.124] 9 [9~9]
+pair wall_s_median_ratio(if/while)
+1/5  1.99
+2/6  1.99
+3/7  3.98
+4/8  3.97
+--- end output ---
+exit: 0
+end: 2026-10-26T22:52:54.982+09:00
+duration_s: 9.80
+
+$ uv run --python 3.14.2+gil python/wait_lab.py --smoke
+start: 2026-10-26T22:52:55.063+09:00
+--- output ---
+로더 계산량을 맞추는 중이다.
+환경: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225255155274-wait-smoke-env.txt
+결과: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225255155274-wait-smoke-python-3.14.2.jsonl
+작은 입력의 실행·저장 검증 완료. 로딩 시간이나 깨어나는 시간을 판단하지 않는다.
+wait  waiters trials load_s(median [min~max]) load/none last_wake_ms(median [min~max]) waiter_cpu_s(median) cpu_s(median)
+none        0      2 1.017 [1.012~1.021]      1.00 - 0.000 1.013
+pass        4      2 5.026 [4.992~5.061]      4.94 0.09 [0.08~0.09] 4.007 5.029
+pass        8      2 8.758 [8.441~9.075]      8.61 0.15 [0.14~0.17] 7.782 8.808
+sleep       4      2 1.029 [1.017~1.041]      1.01 8.06 [5.83~10.28] 0.004 1.028
+sleep       8      2 1.028 [1.023~1.034]      1.01 9.22 [9.05~9.39] 0.009 1.030
+event       4      2 1.034 [1.012~1.057]      1.02 0.14 [0.13~0.14] 0.000 1.024
+event       8      2 1.017 [1.010~1.024]      1.00 0.25 [0.25~0.25] 0.000 1.015
+--- end output ---
+exit: 0
+end: 2026-10-26T22:53:55.473+09:00
+duration_s: 60.41
+
+$ uv run --python 3.14.2+gil python/deadlock_lab.py --smoke
+start: 2026-10-26T22:53:55.546+09:00
+--- output ---
+환경: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225355646306-deadlock-smoke-env.txt
+결과: /Users/kimjoowan/projects/cs-lab/experiments/02-synchronization-primitives/results/validation/2026-10-26T225355646306-deadlock-smoke-python-3.14.2.jsonl
+[0/2] transfer 1번: 멈춤(마친 이체 0)
+[0/2] transfer 2번: 끝남 0.3ms
+[0/2] transfer 3번: 끝남 7.4ms
+[0/2] transfer 4번: 끝남 251.6ms
+[0/2] transfer 5번: 끝남 251.5ms
+[0/2] philosophers 1번: 멈춤(먹은 횟수 0)
+[0/2] philosophers 2번: 끝남 58.0ms
+[0/2] philosophers 3번: 끝남 65.7ms
+[1/2] philosophers 3번: 끝남 66.9ms
+[1/2] philosophers 2번: 끝남 59.8ms
+[1/2] philosophers 1번: 멈춤(먹은 횟수 0)
+[1/2] transfer 5번: 끝남 251.2ms
+[1/2] transfer 4번: 끝남 251.8ms
+[1/2] transfer 3번: 끝남 7.8ms
+[1/2] transfer 2번: 끝남 0.2ms
+[1/2] transfer 1번: 멈춤(마친 이체 0)
+[2/2] transfer 1번: 멈춤(마친 이체 0)
+[2/2] transfer 2번: 끝남 0.2ms
+[2/2] transfer 3번: 끝남 7.6ms
+[2/2] transfer 4번: 끝남 252.5ms
+[2/2] transfer 5번: 끝남 249.8ms
+[2/2] philosophers 1번: 끝남 61.2ms
+[2/2] philosophers 2번: 끝남 66.3ms
+[2/2] philosophers 3번: 끝남 66.3ms
+작은 입력의 실행·저장 검증 완료. 멈춤 여부나 걸린 시간을 판단하지 않는다.
+task         case trials hung zero_at_hang at_hang(median [min~max]) elapsed_ms(median [min~max]) retries(median) cpu_s_hung(median)
+transfer        1      2    2            2 0 [0~0] - - 0.002
+transfer        2      2    0            0 - 0.24 [0.23~0.25] 0 -
+transfer        3      2    0            0 - 7.70 [7.63~7.77] 0 -
+transfer        4      2    0            0 - 252.19 [251.84~252.53] 0 -
+transfer        5      2    0            0 - 250.47 [249.77~251.17] 107.5 -
+philosophers    1      2    1            1 0 [0~0] 61.20 [61.20~61.20] - 0.004
+philosophers    2      2    0            0 - 63.04 [59.80~66.29] - -
+philosophers    3      2    0            0 - 66.58 [66.30~66.85] - -
+--- end output ---
+exit: 0
+end: 2026-10-26T22:54:14.364+09:00
+duration_s: 18.82
+
+=== A5 source sha256 check ===
+current python/*.py sha256:
+  buffer_kernels.py eebd79e558d6ece1d2d8b0f558a3befd2c28a61cdc544ed30828441e4c6369e6
+  buffer_lab.py c0eb43e59e84756002ae632b823e1632381e87f5b2c183828b57ecdaeeadb43f
+  deadlock_kernels.py e45ed5e1d0fe0155a275d24ba16bdf2bd25379c11ed647cd9d0daafc26ec804b
+  deadlock_lab.py ebcbd2a519e3877aeded29ae72f9c0652e6ef3d83ac108b68f9b02630ca32bf3
+  release_kernels.py 1ac1c1955ebbb4399c326a77d4d4ccb4e406828378d9ac0b0afdb6dfe381ae2f
+  release_lab.py b11a79f1cab8d42ab9481eb14d604dbabb6287e550c3bdaf3b5c03beb1f4a411
+  test_buffer_lab.py 23162cfc0b7a2ec5b319c6fd2a8e947a4cef06be2a29632eb4ba2dc8a4ec4f1a
+  test_deadlock_lab.py 736166328e44ec7310d22c540ad5548145991650fd65b1263f4f18490cbdb276
+  test_release_lab.py c25f09ff49395ea7d29f1331184801c0a0841701c3588436e4f662266ac922a3
+  test_wait_lab.py bb416249a41078785b32285ff86ceee769a361062638a0e271fece1b53f877b6
+  wait_kernels.py b1dbc59eb4b861f4b12ed2eb91a6b9976af059231ceaf2eefd2b86c9c9744f77
+  wait_lab.py 4a3cdd4c55cb49464e565a3b863bde7e1b1a75c3416973451f513225436374f7
+results/2026-10-26T191017564448-release-env.txt
+  release_lab.py: match
+  release_kernels.py: match
+results/2026-10-26T192632878236-buffer-env.txt
+  buffer_lab.py: match
+  buffer_kernels.py: match
+  release_lab.py: match
+results/2026-10-26T192812343352-wait-env.txt
+  wait_lab.py: match
+  wait_kernels.py: match
+  release_lab.py: match
+results/2026-10-26T193139713666-deadlock-env.txt
+  deadlock_lab.py: match
+  deadlock_kernels.py: match
+  release_lab.py: match
+results/validation/2026-10-26T225216898745-release-smoke-env.txt
+  release_lab.py: match
+  release_kernels.py: match
+results/validation/2026-10-26T225245285848-buffer-smoke-env.txt
+  buffer_lab.py: match
+  buffer_kernels.py: match
+  release_lab.py: match
+results/validation/2026-10-26T225255155274-wait-smoke-env.txt
+  wait_lab.py: match
+  wait_kernels.py: match
+  release_lab.py: match
+results/validation/2026-10-26T225355646306-deadlock-smoke-env.txt
+  deadlock_lab.py: match
+  deadlock_kernels.py: match
+  release_lab.py: match
+mismatches: none
+=== A6 git status --short ===
+ M ../../README.md
+?? ../../.serena/
+?? ./
