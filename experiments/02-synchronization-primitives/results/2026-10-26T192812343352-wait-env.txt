@@ -1,0 +1,85 @@
+{
+  "started_at": "2026-10-26T19:28:12.343352+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "busy-wait",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/wait-lab-7a3d981b523d0a0b/bin/python3 python/wait_lab.py",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/wait-lab-7a3d981b523d0a0b/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "switch_interval_s": 0.005,
+  "config": {
+    "waits": [
+      "none",
+      "pass",
+      "sleep",
+      "event"
+    ],
+    "waiters": [
+      4,
+      8
+    ],
+    "trials": 10,
+    "output_dir": null,
+    "smoke": false
+  },
+  "conditions": {
+    "target_s": 1.0,
+    "poll_s": 0.01,
+    "waiter_counts": [
+      4,
+      8
+    ],
+    "join_timeout_s": 120
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "f464032230dd1003b53ed8c8d93a8f0e27925508",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n?? ../../.serena/\n?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "wait_lab.py": "4a3cdd4c55cb49464e565a3b863bde7e1b1a75c3416973451f513225436374f7",
+    "wait_kernels.py": "b1dbc59eb4b861f4b12ed2eb91a6b9976af059231ceaf2eefd2b86c9c9744f77",
+    "release_lab.py": "b11a79f1cab8d42ab9481eb14d604dbabb6287e550c3bdaf3b5c03beb1f4a411"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t86%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "calibration": {
+    "n": 18482896,
+    "expected": 36965791,
+    "target_s": 1.0,
+    "alone_s": [
+      1.0144358329998795,
+      0.9853025419997721,
+      0.9759627090002141
+    ]
+  }
+}
