@@ -99,6 +99,14 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
     </ul>
     <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 "실험에서 잰 값" 칸과 <code>실측 기록</code> 표시가 붙은 근거에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/02-synchronization-primitives/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/02-synchronization-primitives/README.md">화면 README</a>에 적었다.</p>
   </section>
+
+  <section aria-labelledby="exp03">
+    <h2 id="exp03">03 MySQL 격리 수준과 MVCC</h2>
+    <ul class="screens">
+      <li><a href="03-mysql-isolation-mvcc/index.html"><b>MVCC 관계도</b><span class="desc">전체 지도 아래에 장면 일곱(스냅숏을 만드는 때, 잔액 세 번 읽기, 잠그며 읽기, 동시 차감, 열어 둔 트랜잭션, InnoDB와 MyISAM, 커밋을 디스크에)의 관계도, SQL, 모든 단계를 한눈에 보는 띠를 둔다. 표 안에 행 버전과 락, 스냅숏이 보는 버전을 그리고, 관계도의 요소를 누르면 개념, 지금 상태, 근거가 나온다.</span></a></li>
+    </ul>
+    <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 순서표 장면의 문장 결과, 기다림, 오류는 실험 원자료와 같다. 실측값은 "실험에서 잰 값" 칸과 <code>실측 기록</code> 표시가 붙은 근거에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/03-mysql-isolation-mvcc/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/03-mysql-isolation-mvcc/README.md">화면 README</a>에 적었다.</p>
+  </section>
 </main>
 </body>
 </html>
