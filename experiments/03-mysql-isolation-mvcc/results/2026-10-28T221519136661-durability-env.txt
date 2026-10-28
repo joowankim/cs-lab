@@ -1,0 +1,127 @@
+{
+  "started_at": "2026-10-28T22:15:19.136661+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "durability",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/durability-lab-8ef2b9a38b6ee721/bin/python3 python/durability_lab.py",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/durability-lab-8ef2b9a38b6ee721/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "settings": [
+      "flush1-binlog1",
+      "flush2-binlog1",
+      "flush1-binlog0",
+      "flush2-binlog0",
+      "sync-on",
+      "sync-off"
+    ],
+    "dbs": [
+      "mysql",
+      "postgres"
+    ],
+    "trials": 3,
+    "inserts": 3000,
+    "mysql": "127.0.0.1:13306",
+    "postgres": "127.0.0.1:15432",
+    "output_dir": null,
+    "smoke": false
+  },
+  "conditions": {
+    "inserts": 3000,
+    "warmup": 200,
+    "probe_writes": 500,
+    "probe_block": "8k"
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "5a24c4661fec82df3114c70745cc735793d17618",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./\n?? ../../infra/\n?? ../../tools/",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "durability_lab.py": "a60c2b641c55a97d156aceee7816de4176cb8e334315a0bdb520ddc9ae823ab2",
+    "isolation_lab.py": "5e31b2cbeb807db49ea7b04bc133ea2b84c924cf73fb1a983ea4c99b1d25be97",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "transaction_isolation": "REPEATABLE-READ",
+      "innodb_flush_log_at_trx_commit": 1,
+      "sync_binlog": 1,
+      "log_bin": 1,
+      "innodb_lock_wait_timeout": 50,
+      "default_storage_engine": "InnoDB",
+      "autocommit": 1
+    },
+    "postgres": {
+      "server_version": "18.6 (Debian 18.6-1.pgdg13+2)",
+      "default_transaction_isolation": "read committed",
+      "synchronous_commit": "on",
+      "fsync": "on",
+      "lock_timeout": "0",
+      "wal_level": "replica"
+    }
+  },
+  "data_directories": {
+    "mysql": "/var/lib/mysql",
+    "postgres": "/var/lib/postgresql/18/docker"
+  },
+  "sync_write_probe": {
+    "mysql": {
+      "writes": 500,
+      "block": "8k",
+      "ms_per_write": 0.612306,
+      "raw": {
+        "returncode": 0,
+        "stdout": "500+0 records in\n500+0 records out\n4096000 bytes (4.1 MB, 3.9 MiB) copied, 0.306153 s, 13.4 MB/s",
+        "stderr": ""
+      }
+    },
+    "postgres": {
+      "writes": 500,
+      "block": "8k",
+      "ms_per_write": 0.683232,
+      "raw": {
+        "returncode": 0,
+        "stdout": "500+0 records in\n500+0 records out\n4096000 bytes (4.1 MB, 3.9 MiB) copied, 0.341616 s, 12.0 MB/s",
+        "stderr": ""
+      }
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               21 minutes ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               21 minutes ago",
+    "stderr": ""
+  }
+}
