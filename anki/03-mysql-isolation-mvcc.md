@@ -1,10 +1,10 @@
 # 03 MySQL 격리 수준과 MVCC — 복습 카드
 
-2026-10-27~28의 실험과 문답을 바탕으로 만든 카드 38개다. MySQL은 8.4.13(InnoDB), PostgreSQL은 18.6을 기준으로 하고, 측정값은 2026-10-28 맥 본 측정(Docker Desktop)에서 잰 값이다. 각 카드의 앞면·뒷면을 나중에 Anki로 옮긴다.
+2026-10-27~28의 실험과 문답을 바탕으로 만든 카드 38개에, 2026-11-02 완료 후 학습 확인에서 6개(03-039~03-044)를 더했다. MySQL은 8.4.13(InnoDB), PostgreSQL은 18.6을 기준으로 하고, 측정값은 2026-10-28 맥 본 측정(Docker Desktop)에서 잰 값이다. 각 카드의 앞면·뒷면을 나중에 Anki로 옮긴다.
 
-뒷면은 에이전트가 정리한 복습용 답이며, 사람의 독립적인 답변 기록이 아니다. 사람의 실제 예상과 해석은 [실험 README의 시작 전 기록][before]과 [첫 해석][interpretation]에 남겼다. 완료 후 학습 확인은 이 카드를 만든 뒤에 하므로, 학습 확인에서 고친 결론이 생기면 카드를 더하거나 고친다.
+뒷면은 에이전트가 정리한 복습용 답이며, 사람의 독립적인 답변 기록이 아니다. 사람의 실제 예상과 해석은 [실험 README의 시작 전 기록][before]과 [첫 해석][interpretation]에 남겼다. 완료 후 학습 확인은 이 카드를 만든 뒤에 했고, 학습 확인에서 틀렸거나 도움받은 곳은 [학습 확인에서 더한 카드](#학습-확인에서-더한-카드)로 더했다.
 
-우선 복습할 카드는 **03-008, 03-010, 03-018, 03-023, 03-026, 03-036**이다. 스냅숏을 만드는 때, 잠금 읽기가 최신 행을 읽는 이유, 갱신 손실, 이전 버전을 지우지 못하는 이유, 오래된 스냅숏의 읽기 비용, 커밋마다 남는 fsync를 다룬다.
+우선 복습할 카드는 **03-008, 03-010, 03-018, 03-023, 03-026, 03-036**이다. 학습 확인 뒤에는 **03-003, 03-031, 03-039, 03-040, 03-043**을 먼저 본다(phantom read의 뜻, MyISAM의 표 락, 자기 `UPDATE` 뒤의 읽기, 스냅숏 하나와 이전 버전 여러 개, 장애 뒤 복구). 스냅숏을 만드는 때, 잠금 읽기가 최신 행을 읽는 이유, 갱신 손실, 이전 버전을 지우지 못하는 이유, 오래된 스냅숏의 읽기 비용, 커밋마다 남는 fsync를 다룬다.
 
 ## 트랜잭션과 격리 수준
 
@@ -322,6 +322,58 @@
 
 **근거:** [참고: 컨테이너 임시 확인 값과 맥 본 측정][container-vs-mac], [첫 해석의 환경 문답][interpretation-env]
 
+## 학습 확인에서 더한 카드
+
+2026-11-02 완료 후 학습 확인에서 틀렸거나 도움받은 곳을 카드로 더했다. 사람의 실제 답은 [실험 README의 완료 후 학습 확인][learning-check]에 있다.
+
+### 03-039
+
+**앞면:** MySQL REPEATABLE READ에서 A가 `user_id = 7`의 행(1, 2)을 평범하게 읽은 뒤 B가 id 4를 넣고 커밋했다. A가 `UPDATE entries SET checked = 1 WHERE user_id = 7;`을 하고 다시 평범하게 읽으면 바뀐 행 수와 읽은 행은? 스냅숏은 그대로인데 왜 그런가?
+
+**뒷면:** `UPDATE`는 최신 커밋 행을 찾아 고치므로 id 4까지 3행을 바꾼다. 그 뒤 평범한 읽기는 1, 2, 4다(컨테이너 MySQL 8.4.6에서 한 번 확인, 본 측정 아님). 스냅숏은 1번 때 그대로지만, A의 `UPDATE`로 id 4 행의 숨은 열 `DB_TRX_ID`가 A의 트랜잭션 ID가 되었고, read view는 자기 트랜잭션이 쓴 버전을 항상 보인다. InnoDB REPEATABLE READ에서 팬텀이 보이지 않는 것은 평범한 읽기만 할 때의 이야기다.
+
+**근거:** [질문 6][q6], [Consistent Nonlocking Reads][consistent-read], [InnoDB Multi-Versioning][multi-versioning]
+
+### 03-040
+
+**앞면:** RR로 한 번 읽고 둔 트랜잭션 A 하나 때문에 MySQL History list length가 10002가 되었다. 남은 1만 개는 스냅숏 1만 개인가? A의 다시 읽기는 무엇을 몇 번 따라가는가?
+
+**뒷면:** 아니다. A가 가진 스냅숏(read view)은 하나이고, 남은 것은 B가 1만 번 고치며 undo log에 쌓인 그 행의 이전 버전이다. History list length는 커밋됐지만 아직 치우지 못한 트랜잭션의 undo log 수라 B의 자동 커밋 1만 번 남짓이 10002로 나왔다. A의 스냅숏이 그 버전들을 볼 수 있어 purge가 지우지 못한다. A의 다시 읽기는 최신 버전에서 roll pointer를 따라 A의 read view에 보이는 버전(1000)이 나올 때까지 약 1만 번 내려가서 2.91ms로 9.3배 느렸다. 새 세션 C는 B가 다 커밋한 뒤 read view를 만들어 최신 버전이 바로 보이므로 느려지지 않았다.
+
+**근거:** [질문 7][q7], [묶음 2][batch2]
+
+### 03-041
+
+**앞면:** 격리 수준을 올리면 잃는 것은 두 종류로 나타났다. 무엇이고, 앱은 각각 무엇을 해야 하는가? 낮은 단계에서는 대신 무엇을 잃었는가?
+
+**뒷면:** 하나는 기다림이다. MySQL SERIALIZABLE에서 평범한 읽기가 공유 락을 걸어 B의 `UPDATE`·`INSERT`가 A의 `COMMIT`까지 1.74초 기다렸다. 다른 하나는 실패와 재시도다. 같은 잔액 차감에서 MySQL SERIALIZABLE은 데드락 오류 1213, PostgreSQL REPEATABLE READ·SERIALIZABLE은 오류 40001로 B를 되돌렸고, 앱은 그 트랜잭션을 처음부터 다시 해야 한다. 낮은 단계(READ COMMITTED, MySQL REPEATABLE READ)에서는 오류 없이 최종 500으로 끝나 A의 300 차감이 사라졌다(갱신 손실). 높은 단계의 오류는 비용이지만 조용한 손실을 드러나는 실패로 바꾼다.
+
+**근거:** [질문 4][q4], [문제 상황 2][problem2], [문제 상황 3][problem3]
+
+### 03-042
+
+**앞면:** 기본 격리 수준이 MySQL InnoDB는 REPEATABLE READ, PostgreSQL은 READ COMMITTED인 이유를 어떻게 설명할 수 있는가?
+
+**뒷면:** MySQL은 예전 복제가 binary log에 SQL 문장을 적어 다시 실행하는 statement 형식을 기본으로 썼고, READ COMMITTED에서는 같은 문장이 복제본에서 다른 행을 건드릴 수 있다. 지금도 READ COMMITTED에서는 row 형식 binary logging만 지원한다(문서). 기본 형식이 row로 바뀐 뒤에도 기본값이 남은 것은 호환 때문이라고 보통 설명한다. PostgreSQL REPEATABLE READ는 스냅숏 이후 남이 고친 행을 고치려 하면 40001을 내서 기본으로 두면 평범한 앱도 재시도가 필요하다. MySQL REPEATABLE READ는 같은 경우 최신 행을 오류 없이 고쳐 부담이 적다(이 비교는 실험 결과에 기댄 추론).
+
+**근거:** [질문 5][q5], [Transaction Isolation Levels][mysql-iso], [문제 상황 3][problem3]
+
+### 03-043
+
+**앞면:** InnoDB가 커밋을 "끝났다"고 알리기 전에 디스크에 내리는 것은 무엇이고, 고친 데이터 페이지는 언제 내려가는가? 장애 뒤 재시작하면 무엇을 하는가?
+
+**뒷면:** 커밋 전에 redo log(기본값에서는 binary log도)를 쓰고 fsync한다. 고친 데이터 페이지는 메모리(buffer pool)에 둔 채 나중에 백그라운드로 내려가고, 체크포인트는 그 지점까지 데이터 페이지도 디스크에 있다는 표시다. 재시작하면 체크포인트 이후의 redo log를 다시 적용해 커밋한 변경을 살리고, 커밋되지 않은 변경은 undo log로 되돌린다. 커밋마다 페이지 전체가 아니라 작은 로그만 이어 쓰므로 싸다. 이 맥에서 커밋 한 번의 몫은 redo log fsync 약 0.09ms, binary log fsync 약 0.46ms였다.
+
+**근거:** [질문 9][q9], [묶음 4의 두 fsync 해석][interpretation-fsync], [Redo Log][redo-log]
+
+### 03-044
+
+**앞면:** 결제 기록을 쌓는 DB 서버와 게시글 조회수만 쌓는 DB 서버에 커밋 fsync 설정을 각각 어떻게 고르는가? 숫자로 근거를 대라.
+
+**뒷면:** 이 두 MySQL 설정은 표마다가 아니라 서버 전체에 걸린다. 결제 기록은 기본값(`innodb_flush_log_at_trx_commit=1`, `sync_binlog=1`, 초당 899건)을 쓴다. 정전 뒤에도 커밋했다고 응답한 기록이 남아야 한다. 조회수는 둘 다 완화한 설정(2, 0, 초당 2491건, 2.77배)을 고려할 수 있다. 볼 때마다 쓰기가 생겨 처리량이 쓸모 있고, OS 장애나 정전으로 최근 약 1초치를 잃어도 숫자가 조금 덜 올라갈 뿐이다. 다만 binary log도 빠질 수 있어 복제본과 어긋날 수 있다.
+
+**근거:** [질문 9][q9], [묶음 4][batch4]
+
 [before]: ../experiments/03-mysql-isolation-mvcc/README.md#시작-전-기록
 [goal]: ../experiments/03-mysql-isolation-mvcc/README.md#목표
 [interpretation]: ../experiments/03-mysql-isolation-mvcc/README.md#첫-해석
@@ -351,6 +403,12 @@
 [sync-write]: ../experiments/03-mysql-isolation-mvcc/README.md#해석-중-더한-측정-이어-쓰기와-덮어쓰기-방식마다-3회
 [observed]: ../experiments/03-mysql-isolation-mvcc/README.md#측정하며-본-것
 [container-vs-mac]: ../experiments/03-mysql-isolation-mvcc/README.md#참고-컨테이너-임시-확인-값과-맥-본-측정
+[learning-check]: ../experiments/03-mysql-isolation-mvcc/README.md#완료-후-학습-확인
+[q4]: ../experiments/03-mysql-isolation-mvcc/README.md#질문-4-격리-수준을-올리면-얻고-잃는-것
+[q5]: ../experiments/03-mysql-isolation-mvcc/README.md#질문-5-db마다-기본-격리-수준이-다른-이유
+[q6]: ../experiments/03-mysql-isolation-mvcc/README.md#질문-6-innodb-repeatable-read에서-팬텀이-보이는가
+[q7]: ../experiments/03-mysql-isolation-mvcc/README.md#질문-7-mvcc의-옛-값과-오래-열린-트랜잭션
+[q9]: ../experiments/03-mysql-isolation-mvcc/README.md#질문-9-커밋한-데이터가-장애-뒤에-살아남는-방법
 [consistent-read]: https://dev.mysql.com/doc/refman/8.4/en/innodb-consistent-read.html
 [locking-reads]: https://dev.mysql.com/doc/refman/8.4/en/innodb-locking-reads.html
 [multi-versioning]: https://dev.mysql.com/doc/refman/8.4/en/innodb-multi-versioning.html
@@ -371,3 +429,4 @@
 [pg-wal-config]: https://www.postgresql.org/docs/18/runtime-config-wal.html
 [pg-async]: https://www.postgresql.org/docs/18/wal-async-commit.html
 [fsync-man]: https://man7.org/linux/man-pages/man2/fsync.2.html
+[redo-log]: https://dev.mysql.com/doc/refman/8.4/en/innodb-redo-log.html
