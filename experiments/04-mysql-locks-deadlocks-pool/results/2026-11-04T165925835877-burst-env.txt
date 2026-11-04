@@ -1,0 +1,83 @@
+{
+  "started_at": "2026-11-04T16:59:25.835877+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "burst",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/burst-lab-1cc849033f636228/bin/python3 python/burst_lab.py --scenes reward-version-first reward-version-const reward-version-const-v3 reward-lock-after-count",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/burst-lab-1cc849033f636228/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "scenes": [
+      "reward-version-first",
+      "reward-version-const",
+      "reward-version-const-v3",
+      "reward-lock-after-count"
+    ],
+    "trials": 3,
+    "requests": 10,
+    "mysql": "127.0.0.1:13306",
+    "output_dir": null,
+    "smoke": false
+  },
+  "conditions": {
+    "lock_timeout_s": 5,
+    "pause_s": 0.05,
+    "join_s": 60
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "04cae9a0d81517fca01e74bf70750889c6a27f0a",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "burst_lab.py": "aa2d0b40ecba6198f7700e0563532e6c69ee74065ae65cd486373f096609efac",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "transaction_isolation": "REPEATABLE-READ",
+      "innodb_lock_wait_timeout": 50,
+      "innodb_deadlock_detect": 1,
+      "innodb_rollback_on_timeout": 0,
+      "max_connections": 151,
+      "autocommit": 1
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               6 days ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               6 days ago",
+    "stderr": ""
+  }
+}
