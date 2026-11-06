@@ -275,8 +275,8 @@
     S.locks.push({ seq: S.seq++, trx: trx.id, table: t, index: null, rec: null, key: null, mode, type: 'TABLE', wait: false });
   }
 
-  // 락을 청한다. 이미 그만큼 쥐었으면 그대로, 부딪히는 락이 없으면 준다. 부딪히면 기다리는 락으로 대기열에 넣는다.
-  // 삽입 의도 락은 부딪힐 때만 락으로 남는다(부딪히지 않으면 확인만 하고 끝난다).
+  // 락을 요청한다. 이미 그만큼 보유했으면 그대로, 충돌하는 락이 없으면 부여한다. 충돌하면 기다리는 락으로 대기열에 넣는다.
+  // 삽입 의도 락은 충돌할 때만 락으로 남는다(충돌하지 않으면 확인만 하고 끝난다).
   function request(S, trx, t, ix, rec, key, mode, type) {
     if (type !== 'II' && S.locks.some((l) => l.trx === trx.id && onRec(l, t, ix, rec) && covers(l, mode, type, rec))) return { ok: true };
     const req = { trx: trx.id, mode, type, rec };
@@ -288,7 +288,7 @@
   }
 
   // 다른 트랜잭션이 넣고 아직 커밋하지 않은 레코드는 그 트랜잭션이 락 구조 없이 잠근 것이다(암묵적 락).
-  // 다른 트랜잭션이 그 레코드에 락을 청하면 InnoDB가 먼저 주인의 명시적인 X 레코드 락으로 바꾼다.
+  // 다른 트랜잭션이 그 레코드에 락을 요청하면 InnoDB가 먼저 주인의 명시적인 X 레코드 락으로 바꾼다.
   function convertImplicit(S, trx, t, ix, r) {
     if (!r) return;
     const v = r.row.vers[0];
@@ -299,8 +299,8 @@
     S.locks.push({ seq: S.seq++, trx: owner.id, table: t, index: ix, rec: r.data, key: r.key, mode: 'X', type: 'REC', wait: false, implicit: true });
   }
 
-  // 기다리는 락 w를 막는 락: 같은 레코드에서 w와 부딪히는 쥔 락 전부와, w보다 먼저 대기열에 든 기다리는 락.
-  // MySQL 8의 레코드 락 대기열은 쥔 락을 앞에, 기다리는 락을 들어온 순서대로 뒤에 둔다. 그래서 w가 기다리는 동안
+  // 기다리는 락 w를 막는 락: 같은 레코드에서 w와 충돌하는 보유 중인 락 전부와, w보다 먼저 대기열에 든 기다리는 락.
+  // MySQL 8의 레코드 락 대기열은 보유 중인 락을 앞에, 기다리는 락을 들어온 순서대로 뒤에 둔다. 그래서 w가 기다리는 동안
   // 다른 트랜잭션이 기다림 없이 얻은 갭 락도 w를 막는다.
   function blockingLocks(S, w) {
     return S.locks.filter((l) => l !== w && onRec(l, w.table, w.index, w.rec) && !(l.wait && l.seq > w.seq) && hasToWait(w, l));
@@ -328,7 +328,7 @@
     return dfs(start) ? path : null;
   }
 
-  // 락을 놓은 뒤, 대기열 앞에서부터 이제 막는 락이 없는 기다림을 준다.
+  // 락을 해제한 뒤, 대기열 앞에서부터 이제 막는 락이 없는 기다림에 락을 부여한다.
   function grantWaiting(S) {
     let changed = true;
     while (changed) {
@@ -365,7 +365,7 @@
     if (sess && sess.trx === trx.id) sess.trx = null;
     grantWaiting(S);
   }
-  // 커밋: 지운 행은 바로 정리한다(purge를 줄임). 쥔 락을 모두 놓는다.
+  // 커밋: 지운 행은 바로 정리한다(purge를 줄임). 보유한 락을 모두 해제한다.
   function commitTrx(S, trx) {
     trx.state = 'committed';
     S.committed.push(trx.id);
@@ -377,7 +377,7 @@
     }
     endTrx(S, trx);
   }
-  // 되돌리기: 이 트랜잭션이 쓴 버전을 지우고, 넣은 행은 인덱스에서 뺀다. 쥔 락을 모두 놓는다.
+  // 되돌리기: 이 트랜잭션이 쓴 버전을 지우고, 넣은 행은 인덱스에서 뺀다. 보유한 락을 모두 해제한다.
   function rollbackTrx(S, trx) {
     trx.state = 'aborted';
     for (const t of Object.values(S.tables)) {
@@ -495,7 +495,7 @@
     return { ok: true, rows, rowcount: rows.length, locking: null, snap, snapNew: !!ctx.snapNew };
   }
 
-  // 삽입 의도 락: 넣을 자리(갭)의 다음 레코드에 청한다. 앞서 기다리다 받은 것이 있으면 그대로 쓴다.
+  // 삽입 의도 락: 넣을 자리(갭)의 다음 레코드에 요청한다. 앞서 기다리다 받은 것이 있으면 그대로 쓴다.
   function insertIntention(S, trx, t, ix, succ) {
     const mine = S.locks.find((l) => l.trx === trx.id && onRec(l, t, ix, succ.rec) && l.type === 'II');
     if (mine) return mine.wait ? { wait: mine } : { ok: true };
@@ -653,9 +653,9 @@
     if (prev == null) return `${ix}의 첫 레코드 ${name(succ.rec)} 앞 갭`;
     return `${ix}의 ${W(name(prev))} ${name(succ.rec)} 사이 갭`;
   }
-  // 기다리는 락 l을 막는 락들: "A가 쥔 X,GAP(갭 락)"
+  // 기다리는 락 l을 막는 락들: "A가 보유한 X,GAP(갭 락)"
   function blockText(S, l) {
-    const list = blockingLocks(S, l).map((x) => `${I(who(S, x.trx))} ${x.wait ? '먼저 청해 기다리는' : '쥔'} ${modeStr(x)}(${kindWord(x)})`);
+    const list = blockingLocks(S, l).map((x) => `${I(who(S, x.trx))} ${x.wait ? '먼저 요청해 기다리는' : '보유한'} ${modeStr(x)}(${kindWord(x)})`);
     return [...new Set(list)].join(', ');
   }
   // 행의 값: "balance 1000, version 1"
@@ -674,7 +674,7 @@
     return '';
   }
 
-  // 기다림의 고리를 이룬 트랜잭션마다 쥔 락(고리에서 앞 트랜잭션이 기다린 것)과 기다린 락. InnoDB 데드락 보고의 (1), (2)와 같은 내용이다.
+  // 기다림의 고리를 이룬 트랜잭션마다 보유한 락(고리에서 앞 트랜잭션이 기다린 것)과 기다린 락. InnoDB 데드락 보고의 (1), (2)와 같은 내용이다.
   function deadlockReport(S, cyc, victim) {
     const order = cyc.slice(1).concat(cyc.slice(0, 1)); // 되돌릴 쪽(고리를 닫은 요청)을 마지막에
     const txns = order.map((tid, i) => {
@@ -684,7 +684,7 @@
       const rec = (l) => (l.rec === 'sup' ? 'supremum' : l.key[0]);
       return { session: sessName(S, tid), name: who(S, tid), holds: holds.map((l) => ({ index: l.index, mode: reportMode(l), records: [rec(l)], lock: l })), waiting: w ? [{ index: w.index, mode: reportMode(w), records: [rec(w)], lock: w }] : [] };
     });
-    const part = (x, i) => `(${i + 1}) ${x.name}: 쥔 락 ${x.holds.map((h) => lockWord(S, h.lock)).join(', ')}, 기다린 락 ${x.waiting.map((h) => lockWord(S, h.lock)).join(', ')}`;
+    const part = (x, i) => `(${i + 1}) ${x.name}: 보유한 락 ${x.holds.map((h) => lockWord(S, h.lock)).join(', ')}, 기다린 락 ${x.waiting.map((h) => lockWord(S, h.lock)).join(', ')}`;
     return {
       victim: sessName(S, victim),
       txns: txns.map((x) => ({ session: x.session, holds: x.holds.map(({ lock, ...r }) => r), waiting: x.waiting.map(({ lock, ...r }) => r) })),
@@ -723,7 +723,7 @@
     return rows.map(({ _k, ...r }) => r);
   }
   // performance_schema.data_lock_waits처럼 기다리는 락과 그 락을 막는 락의 쌍. 막는 락은 blockingLocks와 같다:
-  // 대기열 앞쪽의 쥔 락(기다리기 시작한 뒤에 얻은 것 포함)과 먼저 기다린 락 가운데 부딪히는 것.
+  // 대기열 앞쪽의 보유 중인 락(기다리기 시작한 뒤에 얻은 것 포함)과 먼저 기다린 락 가운데 충돌하는 것.
   function lockWaits(S) {
     const out = [];
     const label = (l) => `${l.index} ${modeStr(l)} ${l.rec === 'sup' ? 'supremum pseudo-record' : l.rec}`;
@@ -864,7 +864,7 @@
           rollbackTrx(S, trx);
           rec.blocked = false;
           finish(sess, rec, { error: { code: 1213, message: 'Deadlock found when trying to get lock; try restarting transaction' }, ctxTrx: trx, report: rep.text,
-            text: `서로 기다리는 고리가 생겼다: ${ringText(S, cyc)} 기다린다. InnoDB가 이를 바로 찾아 고리를 닫은 ${R(sess.name)} 오류 1213(데드락)으로 되돌렸다. ${sess.name}의 트랜잭션 전체가 되돌려져 쥔 락을 모두 놓았다.` });
+            text: `서로 기다리는 고리가 생겼다: ${ringText(S, cyc)} 기다린다. InnoDB가 이를 바로 찾아 고리를 닫은 ${R(sess.name)} 오류 1213(데드락)으로 되돌렸다. ${sess.name}의 트랜잭션 전체가 되돌려져 보유한 락을 모두 해제했다.` });
         }
         return;
       }
@@ -922,7 +922,7 @@
       S.locks = S.locks.filter((l) => l !== p.lock);
       rollbackStatement(S, trx, p.ctx);
       finish(s, p.rec, { error: { code: 1205, message: 'Lock wait timeout exceeded; try restarting transaction' }, ctxTrx: trx,
-        text: `${I(s.name)} ${p.rec.step}번 줄에서 ${R(lockWord(S, p.lock))} 기다린 지 5초(innodb_lock_wait_timeout)가 지나 오류 1205(락 대기 시간 초과)를 받았다. 이 문장만 되돌리고, 트랜잭션과 앞서 쥔 락(${locksText(S, S.locks.filter((l) => l.trx === trx.id && !l.wait)) || '없음'})은 그대로 남는다(innodb_rollback_on_timeout=OFF).` });
+        text: `${I(s.name)} ${p.rec.step}번 줄에서 ${R(lockWord(S, p.lock))} 기다린 지 5초(innodb_lock_wait_timeout)가 지나 오류 1205(락 대기 시간 초과)를 받았다. 이 문장만 되돌리고, 트랜잭션과 앞서 획득한 락(${locksText(S, S.locks.filter((l) => l.trx === trx.id && !l.wait)) || '없음'})은 그대로 남는다(innodb_rollback_on_timeout=OFF).` });
       return true;
     }
 
@@ -1002,7 +1002,7 @@
 
   // ---------- 단계 설명 ----------
 
-  const AUTO_DONE = '자동 커밋 문장이라 끝나자마자 커밋하고 락을 놓았다';
+  const AUTO_DONE = '자동 커밋 문장이라 끝나자마자 커밋하고 락을 해제했다';
 
   function describe(S, sess, op, out, gained) {
     const name = sess.name;
@@ -1011,10 +1011,10 @@
     if (op.k === 'begin') return { type: 'begin', text: `${I(name)} 트랜잭션을 열었다.` };
     if (op.k === 'commit' || op.k === 'rollback') {
       if (out.none) return { type: op.k, text: `${I(name)} ${op.k === 'commit' ? 'COMMIT' : 'ROLLBACK'}을 보냈다. 앞의 오류로 트랜잭션이 이미 통째로 되돌려져 끝낼 것이 없다.` };
-      if (op.k === 'rollback') return { type: op.k, text: `${I(name)} ROLLBACK했다. 쓴 것을 되돌리고 쥔 락을 모두 놓았다.` };
+      if (op.k === 'rollback') return { type: op.k, text: `${I(name)} ROLLBACK했다. 쓴 것을 되돌리고 보유한 락을 모두 해제했다.` };
       const failed = (out.trx && out.trx.failed) || [];
       const lost = failed.length ? ` 오류로 되돌린 ${failed.map((n) => `${n}번 줄`).join(', ')}의 변경은 빠지고, 나머지 문장의 변경만 커밋된다.` : '';
-      return { type: op.k, text: `${I(name)} 커밋했다. 쓴 것이 다른 트랜잭션에 보이고, 쥔 락을 모두 놓았다.${lost}` };
+      return { type: op.k, text: `${I(name)} 커밋했다. 쓴 것이 다른 트랜잭션에 보이고, 보유한 락을 모두 해제했다.${lost}` };
     }
     if (op.k === 'select') {
       const res = rowsWord(out.rows, op);
@@ -1025,10 +1025,10 @@
         if (p.full) parts.push('조건에 쓸 인덱스가 없어 PRIMARY를 처음부터 끝까지 훑었다.');
         else if (!p.primary) parts.push(`${p.index}로 찾았다.`);
         if (gl.length) parts.push(`${R(locksText(S, gl))} 걸었다.`);
-        else parts.push('새로 건 락은 없다(같은 락을 이미 쥐었다).');
-        if (gl.some((l) => l.mode === 'X' && S.locks.some((x) => x.trx === l.trx && x.mode === 'S' && onRec(x, l.table, l.index, l.rec)))) parts.push('같은 레코드에 쥔 S 락은 그대로 두고 X 락을 하나 더 얻었다.');
-        if (sess.iso === 'RC') parts.push(p.full ? 'READ COMMITTED는 갭을 잠그지 않고, 조건에 맞지 않는 행의 락은 조건을 확인한 뒤 바로 놓는다.' : 'READ COMMITTED는 갭을 잠그지 않는다.');
-        else if (p.full) parts.push('REPEATABLE READ 이상은 훑은 레코드마다 넥스트 키 락을 걸고, 조건에 맞지 않는 행의 락도 트랜잭션이 끝날 때까지 쥔다.');
+        else parts.push('새로 건 락은 없다(같은 락을 이미 보유했다).');
+        if (gl.some((l) => l.mode === 'X' && S.locks.some((x) => x.trx === l.trx && x.mode === 'S' && onRec(x, l.table, l.index, l.rec)))) parts.push('같은 레코드에 보유한 S 락은 그대로 두고 X 락을 하나 더 획득했다.');
+        if (sess.iso === 'RC') parts.push(p.full ? 'READ COMMITTED는 갭을 잠그지 않고, 조건에 맞지 않는 행의 락은 조건을 확인한 뒤 바로 해제한다.' : 'READ COMMITTED는 갭을 잠그지 않는다.');
+        else if (p.full) parts.push('REPEATABLE READ 이상은 훑은 레코드마다 넥스트 키 락을 걸고, 조건에 맞지 않는 행의 락도 트랜잭션이 끝날 때까지 보유한다.');
         else if (gl.some((l) => l.type === 'GAP')) parts.push('맞는 레코드 다음의 첫 레코드까지 읽어야 끝을 알 수 있어, 그 레코드 앞 갭도 잠갔다.');
         else if (!p.primary && gl.some((l) => l.rec === 'sup')) parts.push(`맞는 레코드 뒤에 레코드가 없어 마지막 갭(supremum 앞)까지 잠갔다.`);
         return { type: 'lockread', text: `${I(name)} 잠그며 읽었다. 결과: ${res}. ${parts.join(' ')}` };
@@ -1049,7 +1049,7 @@
     const t = S.tables[op.t];
     const where = `${op.t}의 ${t.spec.pk} ${op.pk} 행`;
     if (op.k === 'delete') return { type: 'write', text: `${I(name)} ${R(where)} 지웠다(${trx.auto ? AUTO_DONE : '커밋 전에는 지움 표시만 남긴다'}).${gl.length ? ` ${R(locksText(S, gl))} 걸었다.` : ''}` };
-    if (!out.matched) return { type: 'write', text: `${I(name)} ${R(where)} 잠그고 커밋된 최신 값(${valsText(t, out.base.vals)})을 봤지만 WHERE 조건이 맞지 않아 바꾼 행이 0이다. 건 락은 트랜잭션이 끝날 때까지 쥔다.` };
+    if (!out.matched) return { type: 'write', text: `${I(name)} ${R(where)} 잠그고 커밋된 최신 값(${valsText(t, out.base.vals)})을 봤지만 WHERE 조건이 맞지 않아 바꾼 행이 0이다. 건 락은 트랜잭션이 끝날 때까지 보유한다.` };
     if (out.same) return { type: 'write', text: `${I(name)} ${R(where)} 고쳤지만 값이 그대로라 바뀐 행이 0이다.` };
     const changes = t.spec.cols.filter((c) => c !== t.spec.pk && out.base.vals[c] !== out.v.vals[c]).map((c) => `${R(c)} ${out.base.vals[c]}에서 ${RO(out.v.vals[c])}`);
     return { type: 'write', text: `${I(name)} ${where}에서 ${changes.join(', ')} 고쳤다(${trx.auto ? AUTO_DONE : '커밋 전'}).${gl.length ? ` ${R(locksText(S, gl))} 걸었다.` : ''}` };
@@ -1067,7 +1067,7 @@
       const owners = blockersOf(S, l).map((tid) => who(S, tid)).join('·');
       return `${head} ${N(a.index)} 유니크 인덱스라, 같은 값의 레코드 ${I(`(${a.dup})`)} 정말 있는지 공유 락(${modeStr(l)}, ${TYPE_WORD[l.type]})을 걸고 확인해야 한다. 그 레코드는 ${I(owners)} 넣고 아직 커밋하지 않았다. 넣은 쪽은 새 레코드를 락 구조 없이 잠그는데(암묵적 락), InnoDB가 이때 그것을 ${owners}의 X,REC_NOT_GAP(레코드 락)으로 바꿔 적고 ${I(name)} 그 락에 막혀 기다린다.`;
     }
-    return `${I(name)} ${R(lockWord(S, l))} 청했지만 ${blocks}에 막혀 기다린다.`;
+    return `${I(name)} ${R(lockWord(S, l))} 요청했지만 ${blocks}에 막혀 기다린다.`;
   }
 
   function errorText(S, sess, out) {
@@ -1214,7 +1214,7 @@
       let text = d.text;
       const nm = q.sess.name;
       if (ins.key === 'already') text = `${I(nm)} 센 수가 0이 아니라 "이미 받음"으로 보고 ROLLBACK했다.`;
-      if (ins.key === 'dup') text = `${I(nm)} 1062를 "이미 받음"으로 처리하고 ROLLBACK했다. 확인에 쓴 공유 락도 이제 놓는다.`;
+      if (ins.key === 'dup') text = `${I(nm)} 1062를 "이미 받음"으로 처리하고 ROLLBACK했다. 확인에 쓴 공유 락도 이제 해제한다.`;
       if (ins.key === 'conflict') text = `${I(nm)} 바꾼 행이 0이라(다른 요청이 먼저 version을 바꿈) ROLLBACK했다. 넣었던 지급 행도 함께 되돌렸다.`;
       if (ins.key === 'err') text = `${I(nm)} DB 오류를 받아 ROLLBACK을 보냈다. 트랜잭션은 이미 되돌려져 할 일이 없고, 요청은 실패로 끝난다.`;
       emit(S, d.type, text, [q.id], d.bad ? { bad: true } : null);
@@ -1240,7 +1240,7 @@
           q.pending = null;
           q.sess.pending = null;
           finished(q, ins, { error: { code: 1213, message: 'Deadlock found when trying to get lock; try restarting transaction' }, ctxTrx: trx,
-            text: `서로 기다리는 고리가 생겼다: ${ringText(S, cyc)} 기다린다. InnoDB가 이를 바로 찾아 고리를 닫은 ${R(q.sess.name)} 오류 1213(데드락)으로 되돌렸다. ${q.sess.name}의 트랜잭션 전체가 되돌려져 쥔 락을 모두 놓았다.` });
+            text: `서로 기다리는 고리가 생겼다: ${ringText(S, cyc)} 기다린다. InnoDB가 이를 바로 찾아 고리를 닫은 ${R(q.sess.name)} 오류 1213(데드락)으로 되돌렸다. ${q.sess.name}의 트랜잭션 전체가 되돌려져 보유한 락을 모두 해제했다.` });
         }
         return;
       }

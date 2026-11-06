@@ -74,7 +74,7 @@ test('기다리는 동안 읽은 data_locks와 data_lock_waits가 그 단계의 
   assert.equal(snaps, 26 * 3);
 });
 
-test('끝난 뒤 행과 데드락 보고(되돌린 쪽, 쥔 락, 기다린 락)가 원자료와 같다', () => {
+test('끝난 뒤 행과 데드락 보고(되돌린 쪽, 보유한 락, 기다린 락)가 원자료와 같다', () => {
   for (const row of LOCKS) {
     if (row.run === 0) continue;
     const key = `${row.timeline} ${row.isolation} ${row.deadlock_detect} run ${row.run}`;
@@ -173,7 +173,7 @@ test('동시 요청: 지급하지 못한 요청이 모두 지급한 요청보다
 test('락 규칙(InnoDB 소스): 충돌 판정이 lock_rec_has_to_wait와 같고, 기다리는 락은 먼저 기다린 락에도 막힌다', () => {
   const L = (trx, mode, type, rec = '7') => ({ trx, mode, type, rec });
   const cases = [
-    // [요청, 쥔 락, 기다려야 하는가, 까닭]
+    // [요청, 보유한 락, 기다려야 하는가, 까닭]
     [L('B', 'X', 'NK'), L('B', 'X', 'NK'), false, '같은 트랜잭션'],
     [L('B', 'S', 'NK'), L('A', 'S', 'NK'), false, 'S끼리'],
     [L('B', 'X', 'GAP'), L('A', 'X', 'GAP'), false, '갭 락은 아무것도 기다리지 않는다'],
@@ -189,7 +189,7 @@ test('락 규칙(InnoDB 소스): 충돌 판정이 lock_rec_has_to_wait와 같고
     [L('B', 'S', 'NK'), L('A', 'X', 'REC'), true, 'S 넥스트 키 락과 X 레코드 락(유니크 중복 확인)'],
   ];
   for (const [req, held, want, why] of cases) assert.equal(M.hasToWait(req, held), want, why);
-  // 요청 3개가 points 행을 FOR UPDATE로 잠그는 판: 요청 3은 쥔 요청 1의 락과, 먼저 기다린 요청 2의 락에 함께 막힌다.
+  // 요청 3개가 points 행을 FOR UPDATE로 잠그는 판: 요청 3은 요청 1이 보유한 락과, 먼저 기다린 요청 2의 락에 함께 막힌다.
   const r = M.simulate('reward', { way: 'parent-lock', n: 3 });
   const both = r.views.find((v) => v.waits.some((w) => w.waiting === '3' && w.blocking === '2'));
   assert.ok(both, '요청 3이 요청 2의 기다리는 락에 막히는 단계가 없다');
@@ -200,7 +200,7 @@ test('같은 구성은 언제나 같은 단계 기록을 낸다', () => {
   for (const x of RUNS) assert.equal(JSON.stringify(M.simulate(x.scene, x.cfg)), JSON.stringify(x.r), tag(x));
 });
 
-// 같은 레코드에 다른 트랜잭션이 함께 쥘 수 없는 락이 둘 다 GRANTED로 있는지. 갭 쪽 락(GAP, supremum)끼리는 늘 함께 쥘 수 있고,
+// 같은 레코드에 다른 트랜잭션이 함께 보유할 수 없는 락이 둘 다 GRANTED로 있는지. 갭 쪽 락(GAP, supremum)끼리는 늘 함께 보유할 수 있고,
 // 삽입 의도 락(GRANTED로 남은 것)은 아무것도 막지 않는다.
 function conflictingGranted(locks) {
   const recLocks = locks.filter((l) => l.type === 'RECORD' && l.status === 'GRANTED' && !/INSERT_INTENTION/.test(l.mode));
@@ -215,7 +215,7 @@ function conflictingGranted(locks) {
   return null;
 }
 
-test('세션 상태는 넷 중 하나이고, 기다리는 세션의 칸과 막는 세션이 있으며, 서로 막는 락을 함께 쥐지 않는다', () => {
+test('세션 상태는 넷 중 하나이고, 기다리는 세션의 칸과 막는 세션이 있으며, 서로 막는 락을 함께 보유하지 않는다', () => {
   for (const x of RUNS.filter((y) => y.r.kind !== 'pool')) {
     x.r.views.forEach((v, i) => {
       const where = `${tag(x)} step ${v.label}`;
@@ -263,7 +263,7 @@ test('데드락: 탐지를 켜면 고리를 닫은 쪽이 1213을 받고, 끄면
   assert.equal(off.deadlocks.length, 0);
   assert.deepEqual(off.views.filter((v) => v.tail).map((v) => v.label), ['끝1', '끝2']);
   const after = off.views.find((v) => v.label === '끝1');
-  assert.ok(after.dataLocks.some((l) => l.session === 'A' && l.status === 'GRANTED' && l.data === '1'), '1205 뒤에도 A가 id 1의 락을 쥔다');
+  assert.ok(after.dataLocks.some((l) => l.session === 'A' && l.status === 'GRANTED' && l.data === '1'), '1205 뒤에도 A가 id 1의 락을 보유한다');
   for (const order of ['reverse', 'ordered']) {
     for (const detect of ['ON', 'OFF']) {
       const r = M.simulate('transfer', { order, detect });

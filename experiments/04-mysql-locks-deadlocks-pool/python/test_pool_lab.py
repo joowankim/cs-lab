@@ -45,7 +45,7 @@ class FakeEngine:
 
 class BurstTest(unittest.TestCase):
     def test_requests_queue_for_the_pool(self):
-        # 연결 2개에 요청 6개, 0.1초씩 쥐면 0, 0.1, 0.2초에 두 개씩 받아 0.3초쯤 끝난다.
+        # 연결 2개에 요청 6개, 0.1초씩 보유하면 0, 0.1, 0.2초에 두 개씩 받아 0.3초쯤 끝난다.
         result = burst(FakeEngine(2, 5), "SELECT 1", (FakeTimeout,), requests=6, hold_s=0.1)
         self.assertTrue(result["valid"])
         self.assertEqual((result["summary"]["ok"], result["summary"]["timeout"]), (6, 0))
@@ -54,7 +54,7 @@ class BurstTest(unittest.TestCase):
         self.assertEqual(len(result["requests"]), 6)
 
     def test_pool_timeout_is_counted_not_raised(self):
-        # 연결 2개를 0.2초씩 쥐는 동안 나머지 4개는 0.1초를 기다리다 타임아웃한다.
+        # 연결 2개를 0.2초씩 보유하는 동안 나머지 4개는 0.1초를 기다리다 타임아웃한다.
         result = burst(FakeEngine(2, 0.1), "SELECT 1", (FakeTimeout,), requests=6, hold_s=0.2)
         self.assertTrue(result["valid"])
         self.assertEqual((result["summary"]["ok"], result["summary"]["timeout"]), (2, 4))

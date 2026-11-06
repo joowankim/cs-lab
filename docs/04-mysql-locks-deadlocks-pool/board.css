@@ -1,4 +1,4 @@
-/* 락 관계도. 색은 강조(실행 중, 쥔 락), 경고(문제, 기다림의 고리), 회색 세 갈래만 쓴다. 토큰과 기본 모양은 01~03 화면과 같다. */
+/* 락 관계도. 색은 강조(실행 중, 보유한 락), 경고(문제, 기다림의 고리), 회색 세 갈래만 쓴다. 토큰과 기본 모양은 01~03 화면과 같다. */
 :root {
   --bg: #f7f6f2;
   --panel: #ffffff;
@@ -167,7 +167,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 #board .th .slot.err { fill: var(--warn); font-weight: 700; }
 #board.compact .th .slot { font-size: 11px; }
 
-/* 상자: 바깥 상자는 담는 관계만 뜻한다. 쥔 락은 파란 테두리, 값이 바뀐 칸도 파란 테두리, 문제는 주황이다. */
+/* 상자: 바깥 상자는 담는 관계만 뜻한다. 보유한 락은 파란 테두리, 값이 바뀐 칸도 파란 테두리, 문제는 주황이다. */
 #board .obj > rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.25; transition: stroke var(--move), fill var(--move); }
 #board .obj .title { font-size: 13px; font-weight: 600; }
 #board .obj .state { font-size: 15px; font-weight: 600; }
@@ -207,7 +207,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 #board .lchip.none { display: none; }
 
 /* 인덱스 칸: 표 상자 안에 인덱스마다 한 줄. 레코드 칸은 실선, 갭 칸은 점선, 맨 끝 칸이 supremum(마지막 레코드 뒤 갭)이다.
-   락을 쥔 칸은 파란 테두리와 이름표, 기다리는 칸은 점선 테두리다. 커밋 전에 넣은 레코드는 점선 칸, 지운 레코드는 흐린 칸이다. */
+   보유한 락이 걸린 칸은 파란 테두리와 이름표, 기다리는 칸은 점선 테두리다. 커밋 전에 넣은 레코드는 점선 칸, 지운 레코드는 흐린 칸이다. */
 #board .ixlbl { fill: var(--muted); font-size: 12px; paint-order: stroke; stroke: var(--panel); stroke-width: 4px; stroke-linejoin: round; }
 #board.compact .ixlbl { font-size: 11px; }
 #board .cell > rect { fill: var(--lane); stroke: var(--faint); stroke-width: 1.25; transition: stroke var(--move), fill var(--move); }
@@ -270,7 +270,7 @@ button, select, input, textarea { font: inherit; color: inherit; }
 .waits { margin: 6px 0 0; padding-left: 18px; }
 .waits li { margin: 2px 0; }
 
-/* 연결선: 기다림은 회색 점선, 기다림의 고리에 든 선은 주황 점선. 쥔 락은 선 없이 칸의 이름표와 파란 테두리로 그린다. */
+/* 연결선: 기다림은 회색 점선, 기다림의 고리에 든 선은 주황 점선. 보유한 락은 선 없이 칸의 이름표와 파란 테두리로 그린다. */
 #board .cn { fill: none; stroke-linecap: round; }
 #board .cn.held { stroke: var(--accent); stroke-width: 2; }
 #board .cn.wait { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }

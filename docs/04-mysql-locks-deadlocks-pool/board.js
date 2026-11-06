@@ -5,7 +5,7 @@
  * 세션의 실행 여부(채움, 코드 이름표, 단계 띠 칸)는 그 단계 동안의 상태이고, 락·기다림·레코드·값은 그 단계가 끝난 뒤의 상태다.
  * 표 상자 안에는 인덱스마다 한 줄이 있다. 줄 안의 실선 칸이 인덱스 레코드(키 순서), 그 앞 점선 칸이 갭, 맨 끝 칸이 supremum
  * (마지막 레코드 뒤 갭)이다. 레코드가 없는 단계에는 그 칸과 앞 갭 칸을 숨기고, 다음 갭 칸이 그 자리까지 넓어진다.
- * 쥔 락은 칸의 이름표("X A")와 파란 테두리로, 기다림은 세션에서 칸으로 가는 회색 점선으로, 기다림의 고리는 주황 선으로 그린다.
+ * 보유한 락은 칸의 이름표("X A")와 파란 테두리로, 기다림은 세션에서 칸으로 가는 회색 점선으로, 기다림의 고리는 주황 선으로 그린다.
  * 관계도의 요소를 고르면 설명 칸에 그 요소의 개념, 지금 상태, 근거가 나온다.
  * 단계는 이벤트의 순서이고 시간 길이가 아니다(커넥션 풀 장면만 모형의 시각을 붙인다).
  *
@@ -198,7 +198,7 @@
   }
   function lockLine(r) { return `${lockAt(r)}의 ${r.mode}(${lockKind(r)})`; }
   const MODE_ORDER = { X: 0, S: 1, II: 2 };
-  // 칸마다 쥔 락의 이름표: "X A·B", 동시 요청은 "X 1~3". 기다리는 락은 이름표 대신 칸의 점선 테두리와 선으로 그린다.
+  // 칸마다 보유한 락의 이름표: "X A·B", 동시 요청은 "X 1~3". 기다리는 락은 이름표 대신 칸의 점선 테두리와 선으로 그린다.
   function labelsOf(v) {
     const by = new Map();
     for (const r of v.dataLocks) {
@@ -1289,14 +1289,14 @@
     return `${whoS}의 ${r.mode} (${what})${wait}`;
   }
 
-  // 청한 락: "삽입 의도 락(X,GAP,INSERT_INTENTION)을". 조사는 괄호 앞의 말에 맞춘다.
+  // 요청한 락: "삽입 의도 락(X,GAP,INSERT_INTENTION)을". 조사는 괄호 앞의 말에 맞춘다.
   function askText(s) {
     const kw = KIND_WORD[s.waitType] || s.waitType;
     return `${kw}(${s.waitMode})${josa(kw, ['을', '를']).slice(kw.length)}`;
   }
   function waitersOf(v, cellId) {
     return Object.entries(v.th).filter(([, s]) => s.waitOn === cellId)
-      .map(([id, s]) => `${josa(who(id), ['이', '가'])} ${askText(s)} 청해 ${s.waitBy.length ? `${whoList(s.waitBy)}의 락에 막혀` : ''} 기다린다`);
+      .map(([id, s]) => `${josa(who(id), ['이', '가'])} ${askText(s)} 요청해 ${s.waitBy.length ? `${whoList(s.waitBy)}의 락에 막혀` : ''} 기다린다`);
   }
 
   // 갭 칸의 범위: 이 단계에 있는 바로 앞 레코드와 이 칸의 레코드(또는 supremum) 사이
@@ -1345,17 +1345,17 @@
       if (s.cls === 'run') out.push(`이 단계 동안 실행했다. 실행한 줄: ${lineList(s.lines) || '없음'}.`);
       else out.push('이 단계 동안 실행하지 않았다.');
       if (s.err) {
-        const why = { '오류 1213': '트랜잭션 전체가 되돌려지고 쥔 락을 모두 놓았다', '오류 1205': '그 문장만 되돌렸고, 트랜잭션과 앞서 쥔 락은 남았다', '오류 1062': '그 문장만 되돌렸고, 트랜잭션과 확인에 쓴 공유 락은 남았다' }[s.err];
+        const why = { '오류 1213': '트랜잭션 전체가 되돌려지고 보유한 락을 모두 해제했다', '오류 1205': '그 문장만 되돌렸고, 트랜잭션과 앞서 획득한 락은 남았다', '오류 1062': '그 문장만 되돌렸고, 트랜잭션과 확인에 쓴 공유 락은 남았다' }[s.err];
         out.push(`마지막 문장이 ${s.err}로 끝났다${why ? `. ${why}` : ''}.`);
       }
       let w = '';
-      if (s.waitOn) w = ` · ${nameOf(`cell:${s.waitOn}`)}에 ${askText(s)} 청해${s.waitBy.length ? ` ${whoList(s.waitBy)}의 락에 막혀` : ''} 기다린다`;
+      if (s.waitOn) w = ` · ${nameOf(`cell:${s.waitOn}`)}에 ${askText(s)} 요청해${s.waitBy.length ? ` ${whoList(s.waitBy)}의 락에 막혀` : ''} 기다린다`;
       out.push(`단계 끝: ${stateText(after)}${w}.`);
       if (s.deferred && s.deferred.length) out.push(`앞 문장이 끝나지 않아 미뤄 둔 줄: ${s.deferred.join(', ')}번(순서표 기준).`);
       out.push(`트랜잭션: ${s.trx} · 격리 수준 ${M.LEVEL_NAME[s.iso]}${s.attempt > 1 ? ` · ${s.attempt}번째 시도` : ''}.`);
       if (s.snapAt) out.push(`스냅숏: 단계 ${s.snapAt}에 만들었다. 락 없이 읽는 SELECT는 이 스냅숏을 읽고, 잠그며 읽기와 UPDATE는 커밋된 최신 행을 읽는다.`);
       const held = v.dataLocks.filter((r) => r.session === t.id && r.status === 'GRANTED' && r.type !== 'TABLE');
-      out.push(`단계 끝에 쥔 락: ${held.length ? held.map(lockLine).join(', ') : '없음'}.`);
+      out.push(`단계 끝에 보유 중인 락: ${held.length ? held.map(lockLine).join(', ') : '없음'}.`);
       if (s.local && !s.err) out.push(`마지막 결과: ${s.local.replace(/^→ /, '')}.`);
       const nl = s.at ? firstLine(s.at) : -1;
       if (after.cls !== 'done' && nl >= 0) out.push(`다음에 실행할 줄: ${nl + 1}번.`);
@@ -1366,7 +1366,7 @@
       out.push(`단계 끝에 커밋된 행: ${o.committed.length ? o.committed.map((r) => `(${r.join(', ')})`).join(', ') : '없음'}${spec ? ` · 열 (${spec.cols.join(', ')})` : ''}.`);
       out.push(`인덱스: ${o.indexes.map((x) => (x.primary ? `PRIMARY (${o.pk}, 클러스터형)` : `${x.name} (${[...x.cols, o.pk].join(', ')}${x.unique ? ', UNIQUE' : ''})`)).join(', ')}.`);
       const tl = v.dataLocks.filter((r) => r.type === 'TABLE' && r.table === name);
-      out.push(`표 락: ${tl.length ? tl.map((r) => `${who(r.session)}의 ${r.mode}(${lockKind(r)})`).join(', ') : '없음'}. 행 락을 걸기 전에 표에 거는 의도 락으로, 표 전체를 잠그는 락(LOCK TABLES 등)과만 부딪힌다.`);
+      out.push(`표 락: ${tl.length ? tl.map((r) => `${who(r.session)}의 ${r.mode}(${lockKind(r)})`).join(', ') : '없음'}. 행 락을 걸기 전에 표에 거는 의도 락으로, 표 전체를 잠그는 락(LOCK TABLES 등)과만 충돌한다.`);
     } else if (sel.startsWith('ix:')) {
       const [t, name] = sel.slice(3).split('/');
       const x = ixOf(v, t, name);
@@ -1398,7 +1398,7 @@
       out.push(`락: ${ls.length ? ls.map((r) => cellLockText(r, p.kind)).join(', ') : '없음'}.`);
       const ws = waitersOf(v, id);
       if (ws.length) out.push(`${ws.join('. ')}.`);
-      if (p.kind !== 'rec' && ls.some((r) => r.status === 'GRANTED' && r.kind !== 'II')) out.push('갭을 잠그는 락은 S든 X든 서로 부딪히지 않고, 이 갭에 레코드를 넣는 삽입 의도 락만 막는다.');
+      if (p.kind !== 'rec' && ls.some((r) => r.status === 'GRANTED' && r.kind !== 'II')) out.push('갭을 잠그는 락은 S든 X든 서로 충돌하지 않고, 이 갭에 레코드를 넣는 삽입 의도 락만 막는다.');
     }
     return out;
   }
@@ -1546,8 +1546,8 @@
     return '실험은 순서표 조건마다 워밍업 1회와 3회를 돌렸고, 네 번 모두 같은 행·기다림·오류·락·끝난 뒤 값을 돌려줬다. 이 화면은 그 순서를 그린다. 실험에서 돌리지 않은 조합은 고를 수 없다.';
   }
   const BOARD_NOTE = {
-    timeline: '표 상자 안에 인덱스마다 한 줄이 있다. 위가 보조 인덱스, 아래가 행 데이터를 담은 PRIMARY(클러스터형 인덱스)다. 줄 안의 실선 칸이 인덱스 레코드(키 순서), 그 앞 점선 칸이 갭, 맨 끝 칸이 supremum(마지막 레코드 뒤 갭)이다. 레코드가 들어오면 그 자리의 갭이 둘로 나뉜다. 칸의 "X A"는 A가 쥔 배타 락, "S"는 공유 락, "II"는 삽입 의도 락이다. 넥스트 키 락은 레코드 칸과 그 앞 갭 칸에 함께, 갭 락은 갭 칸에만, 레코드 락은 레코드 칸에만 적는다. 세션에서 칸으로 가는 회색 점선은 그 칸의 락을 기다리는 것이고, 주황 선은 기다림의 고리(데드락)다. PRIMARY 칸 안 작은 상자는 행의 값이다.',
-    burst: '요청 상자 하나가 연결 하나다. 표 상자 안에 인덱스마다 한 줄이 있고, 실선 칸이 인덱스 레코드, 점선 칸이 갭, 맨 끝 칸이 supremum(마지막 레코드 뒤 갭)이다. 칸의 "X 1~3"은 요청 1~3이 쥔 배타 락, "S"는 공유 락, "II"는 삽입 의도 락이다. 요청에서 칸으로 가는 회색 점선은 그 칸의 락을 기다리는 것이고, 주황 선은 기다림의 고리(데드락)다. PRIMARY 칸 안 작은 상자는 행의 값이다(점선은 커밋 전 값, 그 아래 회색은 커밋된 값).',
+    timeline: '표 상자 안에 인덱스마다 한 줄이 있다. 위가 보조 인덱스, 아래가 행 데이터를 담은 PRIMARY(클러스터형 인덱스)다. 줄 안의 실선 칸이 인덱스 레코드(키 순서), 그 앞 점선 칸이 갭, 맨 끝 칸이 supremum(마지막 레코드 뒤 갭)이다. 레코드가 들어오면 그 자리의 갭이 둘로 나뉜다. 칸의 "X A"는 A가 보유한 배타 락, "S"는 공유 락, "II"는 삽입 의도 락이다. 넥스트 키 락은 레코드 칸과 그 앞 갭 칸에 함께, 갭 락은 갭 칸에만, 레코드 락은 레코드 칸에만 적는다. 세션에서 칸으로 가는 회색 점선은 그 칸의 락을 기다리는 것이고, 주황 선은 기다림의 고리(데드락)다. PRIMARY 칸 안 작은 상자는 행의 값이다.',
+    burst: '요청 상자 하나가 연결 하나다. 표 상자 안에 인덱스마다 한 줄이 있고, 실선 칸이 인덱스 레코드, 점선 칸이 갭, 맨 끝 칸이 supremum(마지막 레코드 뒤 갭)이다. 칸의 "X 1~3"은 요청 1~3이 보유한 배타 락, "S"는 공유 락, "II"는 삽입 의도 락이다. 요청에서 칸으로 가는 회색 점선은 그 칸의 락을 기다리는 것이고, 주황 선은 기다림의 고리(데드락)다. PRIMARY 칸 안 작은 상자는 행의 값이다(점선은 커밋 전 값, 그 아래 회색은 커밋된 값).',
     pool: '앱 상자의 점 하나가 요청 하나다. 풀 상자의 칸 하나가 미리 만든 연결 하나이고, 칸 안 글자는 그 연결을 빌린 요청이다. MySQL 상자는 서버에 열린 연결 수다. 풀에서 MySQL로 가는 화살표는 연결을 쓰는 요청이 있을 때 파랗다.',
   };
 
@@ -1567,7 +1567,7 @@
         + '<li><i class="dot-sw done"></i>끝</li><li><i class="dot-sw timeout"></i>풀 타임아웃</li><li><i class="shape box"></i>풀의 연결 (빌려 간 연결은 파랑)</li>';
     }
     const shapes = `<li><i class="shape circle"></i>${isBurst() ? '요청 (연결 하나)' : '세션'}</li><li><i class="cell-sw"></i>인덱스 레코드</li><li><i class="cell-sw gap"></i>갭 · supremum</li>`
-      + '<li><i class="cell-sw held"></i>락을 쥔 칸</li><li><i class="cell-sw waited"></i>기다리는 칸</li><li><i class="cell-sw ins"></i>커밋 전에 넣은 레코드</li>'
+      + '<li><i class="cell-sw held"></i>보유한 락이 걸린 칸</li><li><i class="cell-sw waited"></i>기다리는 칸</li><li><i class="cell-sw ins"></i>커밋 전에 넣은 레코드</li>'
       + '<li><i class="ver-sw"></i>커밋된 값</li><li><i class="ver-sw active"></i>커밋 전 값</li>';
     const states = '<li><i class="sw run"></i>실행 중</li><li><i class="sw turn"></i>차례 기다림</li><li><i class="sw event"></i>락 기다림</li><li><i class="sw done"></i>끝</li>';
     const lines = '<li><i class="cnl wait"></i>락 기다림</li><li><i class="cnl cycle"></i>기다림의 고리</li>';

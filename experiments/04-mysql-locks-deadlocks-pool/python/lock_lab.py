@@ -2,7 +2,7 @@
 # requires-python = ">=3.14,<3.15"
 # dependencies = ["pymysql==1.2.3"]
 # ///
-"""두 세션에 SQL 순서표를 차례로 흘려 넣고, 단계마다 돌려받은 값·기다림·오류와 그때 잡힌 락을 기록한다.
+"""두 세션에 SQL 순서표를 차례로 흘려 넣고, 단계마다 돌려받은 값·기다림·오류와 그때 걸린 락을 기록한다.
 
 실행 규칙(0.5초 기다림 판정, 0.3초 모으기, 미룸, 락 대기 5초, 15초 뒤 취소)은 03 실험 isolation_lab.py와 같고
 MySQL에서만 돌린다. 더한 것은 앞 단계를 보낸 때부터 기다렸다 보내기, 단계 직후 락 읽기, 데드락 탐지 설정과
@@ -198,7 +198,7 @@ FIELD_ZERO = re.compile(r"^\s*0: len (\d+); hex ([0-9a-f]+); asc (.*?);;")
 
 
 def parse_deadlock(section: str, names: dict[int, str]) -> dict:
-    """LATEST DETECTED DEADLOCK 부분에서 트랜잭션마다 세션·문장·쥔 락·기다린 락과 되돌린 쪽을 뽑는다."""
+    """LATEST DETECTED DEADLOCK 부분에서 트랜잭션마다 세션·문장·보유한 락·기다린 락과 되돌린 쪽을 뽑는다."""
     transactions: dict[str, dict] = {}
     current = None
     part = None

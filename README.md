@@ -30,7 +30,7 @@
 | 1 | [동시성 모델 비교: 스레드·프로세스·asyncio, GIL 있음/없음](experiments/01-concurrency-models/README.md) | 완료 (2026-10-23) |
 | 2 | [동기화 도구 직접 쓰기](experiments/02-synchronization-primitives/README.md) | 완료 (2026-10-26) |
 | 3 | [MySQL 격리 수준과 MVCC](experiments/03-mysql-isolation-mvcc/README.md) | 완료 (2026-11-02) |
-| 4 | MySQL 락·데드락·커넥션 풀 | 예정 |
+| 4 | [MySQL 락·데드락·커넥션 풀](experiments/04-mysql-locks-deadlocks-pool/README.md) | 완료 (2026-11-06) |
 | 5 | 인덱스와 실행 계획 | 예정 |
 | 6 | 조인과 SQL | 예정 |
 | 7 | 스키마 설계와 정규화 | 예정 |

@@ -164,7 +164,7 @@ REWARD_COUNT_LOCK_PAIR = Timeline(
     name="reward-count-lock-pair",
     title="문제 상황 3 (가) 처음 판을 두 요청으로 줄임: 아직 없는 범위를 잠근 두 지급 요청",
     # burst_lab.py의 reward-count-lock에서 50ms와 잔액 UPDATE를 빼고 두 요청을 차례로 보내,
-    # 두 요청이 쥔 락과 데드락 보고를 읽는다. 표는 문제 상황 3의 rewards와 같다(비어 있음).
+    # 두 요청이 보유한 락과 데드락 보고를 읽는다. 표는 문제 상황 3의 rewards와 같다(비어 있음).
     setup=(
         "DROP TABLE IF EXISTS rewards",
         "CREATE TABLE rewards (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, event_id INT NOT NULL, "
