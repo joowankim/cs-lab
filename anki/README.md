@@ -12,3 +12,4 @@
 | 02 동기화 도구 직접 쓰기 | [복습 카드](02-synchronization-primitives.md) | [실험 README](../experiments/02-synchronization-primitives/README.md) |
 | 03 MySQL 격리 수준과 MVCC | [복습 카드](03-mysql-isolation-mvcc.md) | [실험 README](../experiments/03-mysql-isolation-mvcc/README.md) |
 | 04 MySQL 락·데드락·커넥션 풀 | [복습 카드](04-mysql-locks-deadlocks-pool.md) | [실험 README](../experiments/04-mysql-locks-deadlocks-pool/README.md) |
+| 05 MySQL 인덱스와 실행 계획 | [복습 카드](05-mysql-indexes-explain.md) | [실험 README](../experiments/05-mysql-indexes-explain/README.md) |
