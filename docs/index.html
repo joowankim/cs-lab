@@ -115,6 +115,14 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
     </ul>
     <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 순서표 장면의 문장 결과, 기다림, 오류, 기다리는 동안 읽은 락과 동시 요청 장면의 결과 수는 실험 원자료와 같다. 실측값은 "실험에서 잰 값" 칸과 <code>실측 기록</code> 표시가 붙은 근거에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/04-mysql-locks-deadlocks-pool/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/04-mysql-locks-deadlocks-pool/README.md">화면 README</a>에 적었다.</p>
   </section>
+
+  <section aria-labelledby="exp05">
+    <h2 id="exp05">05 MySQL 인덱스와 실행 계획</h2>
+    <ul class="screens">
+      <li><a href="05-mysql-indexes-explain/index.html"><b>인덱스 관계도</b><span class="desc">전체 지도 아래에 장면 일곱(찾기와 두 번 읽기, 복합 인덱스의 칼럼 순서, 인덱스가 쓰이지 않는 경우, 정렬 생략, OFFSET과 커서, 페이지 분할과 버퍼 풀, 인덱스와 락 범위)의 관계도, SQL과 EXPLAIN, 모든 단계를 한눈에 보는 띠를 둔다. B+트리의 페이지와 항목을 읽는 순서, 행을 넣을 때의 페이지 분할과 버퍼 풀, 레코드와 갭에 걸리는 락을 그리고, 관계도의 요소를 누르면 개념, 지금 상태, 근거가 나온다.</span></a></li>
+    </ul>
+    <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 맥 본 측정에 같은 쿼리가 있는 구성은 계획(<code>type</code>, <code>key</code>, <code>Extra</code>)이 원자료의 EXPLAIN과 같고, <code>Handler_read_*</code>의 꼴이 원자료와 같다. 실측값은 "실험에서 잰 값" 칸과 <code>실측 기록</code> 표시가 붙은 근거에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/05-mysql-indexes-explain/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/05-mysql-indexes-explain/README.md">화면 README</a>에 적었다.</p>
+  </section>
 </main>
 </body>
 </html>
