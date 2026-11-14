@@ -1,0 +1,324 @@
+{
+  "started_at": "2026-11-11T23:08:00.733658+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "index",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/index-lab-833fcac767357e45/bin/python3 python/index_lab.py",
+  "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/index-lab-833fcac767357e45/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": false,
+  "free_threaded_build": true,
+  "config": {
+    "cases": [
+      "s1-none",
+      "s1-user",
+      "s1-user-created",
+      "s1-created-user",
+      "s1-covering",
+      "s1-1-none",
+      "s1-1-user",
+      "s1-1-user-created",
+      "s1-1-covering",
+      "s1-3-indexes",
+      "s1-3-memo",
+      "s1-3-memo-prefix",
+      "s1-3-fix",
+      "s1-3-func-index",
+      "s2-none",
+      "s2-created",
+      "s2-user",
+      "s2-user-created"
+    ],
+    "trials": 3,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "buffer_pool_mb": 1024,
+    "reload": false,
+    "output_dir": null,
+    "smoke": false
+  },
+  "conditions": {
+    "seed": 5,
+    "rows": 1000000,
+    "buffer_pool_bytes": 1073741824,
+    "original_buffer_pool_bytes": 134217728,
+    "load_s": 12.568845124915242,
+    "fingerprint": {
+      "rows": 1000000,
+      "user_sum": 47491086230,
+      "amount_sum": 100636006700,
+      "first_created": "2025-11-10 00:00:32",
+      "last_created": "2026-11-09 23:59:38"
+    },
+    "cases": {
+      "s1-none": {
+        "ddl": [],
+        "author": "에이전트",
+        "queries": [
+          "recent-4242"
+        ]
+      },
+      "s1-user": {
+        "ddl": [
+          "CREATE INDEX idx_user ON orders (user_id)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "recent-4242"
+        ]
+      },
+      "s1-user-created": {
+        "ddl": [
+          "CREATE INDEX idx_user_created ON orders (user_id, created_at)"
+        ],
+        "author": "사람",
+        "queries": [
+          "recent-4242"
+        ]
+      },
+      "s1-created-user": {
+        "ddl": [
+          "CREATE INDEX idx_created_user ON orders (created_at, user_id)"
+        ],
+        "author": "사람",
+        "queries": [
+          "recent-4242"
+        ]
+      },
+      "s1-covering": {
+        "ddl": [
+          "CREATE INDEX idx_user_id_created_at ON orders (user_id, created_at)"
+        ],
+        "author": "사람",
+        "queries": [
+          "recent-4242"
+        ]
+      },
+      "s1-1-none": {
+        "ddl": [],
+        "author": "에이전트",
+        "queries": [
+          "recent-1"
+        ]
+      },
+      "s1-1-user": {
+        "ddl": [
+          "CREATE INDEX idx_user ON orders (user_id)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "recent-1"
+        ]
+      },
+      "s1-1-user-created": {
+        "ddl": [
+          "CREATE INDEX idx_user_created ON orders (user_id, created_at)"
+        ],
+        "author": "사람",
+        "queries": [
+          "recent-1"
+        ]
+      },
+      "s1-1-covering": {
+        "ddl": [
+          "CREATE INDEX idx_user_created_amount ON orders (user_id, created_at, amount)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "recent-1"
+        ]
+      },
+      "s1-3-indexes": {
+        "ddl": [
+          "CREATE INDEX idx_created ON orders (created_at)",
+          "CREATE INDEX idx_phone ON orders (phone)",
+          "CREATE INDEX idx_user ON orders (user_id)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "day-func",
+          "day-range",
+          "phone-number",
+          "phone-string",
+          "phone-suffix",
+          "phone-prefix",
+          "user-string",
+          "user-int"
+        ]
+      },
+      "s1-3-memo": {
+        "ddl": [
+          "CREATE INDEX idx_memo ON orders (memo)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "memo-like"
+        ]
+      },
+      "s1-3-memo-prefix": {
+        "ddl": [
+          "CREATE INDEX idx_memo ON orders (memo(20))"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "memo-like"
+        ]
+      },
+      "s1-3-fix": {
+        "ddl": [
+          "CREATE INDEX idx_created ON orders (created_at)",
+          "CREATE INDEX idx_phone ON orders (phone)",
+          "CREATE INDEX idx_user ON orders (user_id)"
+        ],
+        "author": "사람",
+        "queries": [
+          "day-fix-person",
+          "phone-fix-person",
+          "day-fix-person-2",
+          "day-func",
+          "day-range"
+        ]
+      },
+      "s1-3-func-index": {
+        "ddl": [
+          "CREATE INDEX idx_created_date ON orders ((DATE(created_at)))"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "day-func"
+        ]
+      },
+      "s2-none": {
+        "ddl": [],
+        "author": "에이전트",
+        "queries": [
+          "latest-20"
+        ]
+      },
+      "s2-created": {
+        "ddl": [
+          "CREATE INDEX idx_created ON orders (created_at)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "latest-20",
+          "latest-offset-100k",
+          "latest-offset-100k-force",
+          "latest-cursor-or",
+          "latest-cursor-row",
+          "latest-cursor-created-only",
+          "latest-cursor-person-hyphen-fixed",
+          "latest-cursor-person-2",
+          "latest-cursor-person-2-p170",
+          "latest-offset-p170",
+          "latest-cursor-or-p170"
+        ]
+      },
+      "s2-user": {
+        "ddl": [
+          "CREATE INDEX idx_user ON orders (user_id)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "user1-latest-20"
+        ]
+      },
+      "s2-user-created": {
+        "ddl": [
+          "CREATE INDEX idx_user_created ON orders (user_id, created_at)"
+        ],
+        "author": "에이전트",
+        "queries": [
+          "user1-latest-20"
+        ]
+      }
+    },
+    "queries": {
+      "recent-4242": "SELECT created_at, amount FROM orders WHERE user_id = 4242 AND created_at >= '2026-08-10'",
+      "recent-1": "SELECT created_at, amount FROM orders WHERE user_id = 1 AND created_at >= '2026-08-10'",
+      "day-func": "SELECT id, amount FROM orders WHERE DATE(created_at) = '2026-08-10'",
+      "day-range": "SELECT id, amount FROM orders WHERE created_at >= '2026-08-10' AND created_at < '2026-08-11'",
+      "phone-number": "SELECT id, amount FROM orders WHERE phone = 01009234282",
+      "phone-string": "SELECT id, amount FROM orders WHERE phone = '01009234282'",
+      "phone-suffix": "SELECT id, amount FROM orders WHERE phone LIKE '%4282'",
+      "phone-prefix": "SELECT id, amount FROM orders WHERE phone LIKE '0100923%'",
+      "user-string": "SELECT id, amount FROM orders WHERE user_id = '4242'",
+      "user-int": "SELECT id, amount FROM orders WHERE user_id = 4242",
+      "memo-like": "SELECT id, amount FROM orders WHERE memo LIKE '%포장%'",
+      "day-fix-person": "SELECT id, amount FROM orders WHERE created_at = DATE('2026-08-10')",
+      "phone-fix-person": "SELECT id, amount FROM orders WHERE phone = '01009234282'",
+      "day-fix-person-2": "SELECT id, amount FROM orders WHERE created_at >= DATE('2026-08-10') and created_at < DATE('2026-08-11')",
+      "latest-20": "SELECT id, user_id, amount, created_at FROM orders ORDER BY created_at DESC LIMIT 20",
+      "user1-latest-20": "SELECT id, amount, created_at FROM orders WHERE user_id = 1 ORDER BY created_at DESC LIMIT 20",
+      "latest-offset-100k": "SELECT id, user_id, amount, created_at FROM orders ORDER BY created_at DESC LIMIT 20 OFFSET 100000",
+      "latest-offset-100k-force": "SELECT id, user_id, amount, created_at FROM orders FORCE INDEX (idx_created) ORDER BY created_at DESC LIMIT 20 OFFSET 100000",
+      "latest-cursor-or": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-10-04 10:09:05' OR (created_at = '2026-10-04 10:09:05' AND id < 900001) ORDER BY created_at DESC, id DESC LIMIT 20",
+      "latest-cursor-row": "SELECT id, user_id, amount, created_at FROM orders WHERE (created_at, id) < ('2026-10-04 10:09:05', 900001) ORDER BY created_at DESC, id DESC LIMIT 20",
+      "latest-cursor-created-only": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-10-04 10:09:05' ORDER BY created_at DESC LIMIT 20",
+      "latest-cursor-person-hyphen-fixed": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-10-04 10:09:05' ORDER BY created_at LIMIT 20",
+      "latest-cursor-person-2": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-10-04 10:09;05' ORDER BY created_at DESC , id DESC LIMIT 20",
+      "latest-cursor-person-2-p170": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-11-08 18:56;53' ORDER BY created_at DESC , id DESC LIMIT 20",
+      "latest-offset-p170": "SELECT id, user_id, amount, created_at FROM orders ORDER BY created_at DESC, id DESC LIMIT 20 OFFSET 3380",
+      "latest-cursor-or-p170": "SELECT id, user_id, amount, created_at FROM orders WHERE created_at < '2026-11-08 18:56:53' OR (created_at = '2026-11-08 18:56:53' AND id < 996621) ORDER BY created_at DESC, id DESC LIMIT 20"
+    }
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "1bdcd09a07ebcd3388a9c3767fdd9a9418df93bc",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "index_lab.py": "b37a1c6e6731e50fe718366048ae53b38179d26c20f74671dbbc49ed2d7a7e75",
+    "index_cases.py": "fdb8a69f59af7dbf79a593a6d9ceb6da5fe1c4a179dbeb51057c2197f2a1ea52",
+    "orders_data.py": "128f996f257467d79702447dcf0d5e154228b25d3b678a88fb961a9b496517bc",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t77%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 1073741824,
+      "innodb_page_size": 16384,
+      "innodb_flush_log_at_trx_commit": 1,
+      "optimizer_switch": "index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on",
+      "eq_range_index_dive_limit": 200,
+      "innodb_stats_persistent_sample_pages": 20,
+      "sort_buffer_size": 262144,
+      "character_set_server": "utf8mb4",
+      "collation_server": "utf8mb4_0900_ai_ci"
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               2 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               2 weeks ago",
+    "stderr": ""
+  }
+}

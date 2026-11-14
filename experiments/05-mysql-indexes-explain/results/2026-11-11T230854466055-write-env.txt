@@ -1,0 +1,126 @@
+{
+  "started_at": "2026-11-11T23:08:54.466055+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "write",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/write-lab-9608fd601db5ae3e/bin/python python/write_lab.py",
+  "python": "3.14.2 free-threading build (main, Jan 27 2026, 23:31:54) [Clang 21.1.4 ]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/write-lab-9608fd601db5ae3e/bin/python",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": false,
+  "free_threaded_build": true,
+  "config": {
+    "parts": [
+      "indexes",
+      "pk"
+    ],
+    "trials": 3,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "buffer_pool_mb": 1024,
+    "output_dir": null,
+    "smoke": false
+  },
+  "conditions": {
+    "seed": 5,
+    "batch_rows": 5000,
+    "more_rows": 100000,
+    "pk_rows": 1000000,
+    "buffer_pool_bytes": 1073741824,
+    "original_buffer_pool_bytes": 134217728,
+    "base_fingerprint": {
+      "rows": 1000000,
+      "user_sum": 47491086230,
+      "amount_sum": 100636006700,
+      "first_created": "2025-11-10 00:00:32",
+      "last_created": "2026-11-09 23:59:38"
+    },
+    "index_sets": {
+      "idx-0": [],
+      "idx-3": [
+        "CREATE INDEX idx_user ON orders_w (user_id)",
+        "CREATE INDEX idx_created ON orders_w (created_at)",
+        "CREATE INDEX idx_phone ON orders_w (phone)"
+      ],
+      "idx-6": [
+        "CREATE INDEX idx_user ON orders_w (user_id)",
+        "CREATE INDEX idx_created ON orders_w (created_at)",
+        "CREATE INDEX idx_phone ON orders_w (phone)",
+        "CREATE INDEX idx_status ON orders_w (status)",
+        "CREATE INDEX idx_user_created ON orders_w (user_id, created_at)",
+        "CREATE INDEX idx_amount ON orders_w (amount)"
+      ]
+    },
+    "pk_types": {
+      "pk-auto": "BIGINT PRIMARY KEY AUTO_INCREMENT",
+      "pk-uuid4": "BINARY(16) PRIMARY KEY",
+      "pk-uuid7": "BINARY(16) PRIMARY KEY"
+    },
+    "pk_table": "CREATE TABLE orders_pk (\n  id         {pk},\n  user_id    INT         NOT NULL,\n  status     VARCHAR(10) NOT NULL,\n  amount     INT         NOT NULL,\n  phone      VARCHAR(20) NOT NULL,\n  memo       TEXT        NOT NULL,\n  created_at DATETIME    NOT NULL,\n  KEY idx_user (user_id)\n) ENGINE=InnoDB",
+    "metrics": [
+      "index_page_splits",
+      "index_page_merge_attempts",
+      "index_page_merge_successful",
+      "index_page_reorg_attempts",
+      "index_page_discards"
+    ]
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "1bdcd09a07ebcd3388a9c3767fdd9a9418df93bc",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "write_lab.py": "581076a4ac8764edda3c5958969e38c240823aa8fd7fda936ea79e515c4101ac",
+    "index_lab.py": "b37a1c6e6731e50fe718366048ae53b38179d26c20f74671dbbc49ed2d7a7e75",
+    "orders_data.py": "128f996f257467d79702447dcf0d5e154228b25d3b678a88fb961a9b496517bc",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t77%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 1073741824,
+      "innodb_page_size": 16384,
+      "innodb_flush_log_at_trx_commit": 1,
+      "optimizer_switch": "index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on",
+      "eq_range_index_dive_limit": 200,
+      "innodb_stats_persistent_sample_pages": 20,
+      "sort_buffer_size": 262144,
+      "character_set_server": "utf8mb4",
+      "collation_server": "utf8mb4_0900_ai_ci"
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               2 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               2 weeks ago",
+    "stderr": ""
+  }
+}
