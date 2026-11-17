@@ -1,0 +1,411 @@
+{
+  "started_at": "2026-11-17T16:42:11.743263+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "join",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/join-lab-532ad2ffc2547423/bin/python3 python/join_lab.py",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/join-lab-532ad2ffc2547423/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "parts": [
+      "results",
+      "algo",
+      "n1"
+    ],
+    "trials": 3,
+    "smoke": false,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "output_dir": null
+  },
+  "conditions": {
+    "schema": "lab6",
+    "load_s": {
+      "results": 0.028625291073694825,
+      "algo": 0.13361741695553064,
+      "n1": 0.6300518750213087
+    },
+    "n1_sizes": [
+      10,
+      100,
+      1000
+    ],
+    "results": [
+      {
+        "name": "1-ga-inner",
+        "situation": "1",
+        "label": "(가) JOIN",
+        "sql": "SELECT u.id, o.id FROM users u JOIN orders o ON u.id = o.user_id ORDER BY u.id, o.id",
+        "expected": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-na-left",
+        "situation": "1",
+        "label": "(나) LEFT JOIN",
+        "sql": "SELECT u.id, o.id FROM users u LEFT JOIN orders o ON u.id = o.user_id ORDER BY u.id, o.id",
+        "expected": [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            null
+          ],
+          [
+            5,
+            null
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-da-left-where",
+        "situation": "1",
+        "label": "(다) LEFT JOIN + WHERE",
+        "sql": "SELECT u.id, o.id FROM users u LEFT JOIN orders o ON u.id = o.user_id WHERE o.status = 'paid' ORDER BY u.id, o.id",
+        "expected": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            3
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-ra-left-on",
+        "situation": "1",
+        "label": "(라) LEFT JOIN + ON",
+        "sql": "SELECT u.id, o.id FROM users u LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'paid' ORDER BY u.id, o.id",
+        "expected": [
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            3,
+            null
+          ],
+          [
+            4,
+            null
+          ],
+          [
+            5,
+            null
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-1-A-left-is-null",
+        "situation": "1-1",
+        "label": "(A) LEFT JOIN … IS NULL",
+        "sql": "SELECT u.id FROM users u LEFT JOIN orders o ON u.id = o.user_id WHERE o.id is NULL;",
+        "expected": [
+          [
+            4
+          ],
+          [
+            5
+          ]
+        ],
+        "author": "사람"
+      },
+      {
+        "name": "1-1-B-not-exists",
+        "situation": "1-1",
+        "label": "(B) NOT EXISTS",
+        "sql": "SELECT u.id FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)",
+        "expected": [
+          [
+            4
+          ],
+          [
+            5
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-1-C-not-in",
+        "situation": "1-1",
+        "label": "(C) NOT IN",
+        "sql": "SELECT u.id FROM users u WHERE u.id NOT IN (SELECT user_id FROM orders)",
+        "expected": [],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-1-C-not-in-person",
+        "situation": "1-1",
+        "label": "(C) 사람 판(결제 완료 기준)",
+        "sql": "SELECT u.id FROM users u WHERE u.id NOT IN (SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = 'paid');",
+        "expected": [
+          [
+            3
+          ],
+          [
+            4
+          ],
+          [
+            5
+          ]
+        ],
+        "author": "사람"
+      },
+      {
+        "name": "1-1-D-in",
+        "situation": "1-1",
+        "label": "(D) IN",
+        "sql": "SELECT u.id FROM users u WHERE u.id IN (SELECT user_id FROM orders)",
+        "expected": [
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-1-D-in-person",
+        "situation": "1-1",
+        "label": "(D) 사람 판(결제 완료 기준)",
+        "sql": "SELECT u.id FROM users u WHERE u.id IN (SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id WHERE o.status = 'paid');",
+        "expected": [
+          [
+            1
+          ],
+          [
+            2
+          ]
+        ],
+        "author": "사람"
+      },
+      {
+        "name": "1-1-E-exists",
+        "situation": "1-1",
+        "label": "(E) EXISTS",
+        "sql": "SELECT u.id FROM users u WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)",
+        "expected": [
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ]
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "1-1-F-join",
+        "situation": "1-1",
+        "label": "(F) JOIN",
+        "sql": "SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id;",
+        "expected": [
+          [
+            1
+          ],
+          [
+            1
+          ],
+          [
+            2
+          ],
+          [
+            3
+          ]
+        ],
+        "author": "사람"
+      }
+    ],
+    "algo": [
+      {
+        "name": "2-ga-no-index",
+        "label": "(가) 인덱스 없음",
+        "index": false,
+        "sql": "SELECT COUNT(*), SUM(o.amount) FROM algo_users u JOIN algo_orders o ON u.code = o.user_code",
+        "expected": [
+          10000,
+          4995000
+        ]
+      },
+      {
+        "name": "2-na-no-index-no-bnl",
+        "label": "(나) 인덱스 없음 + NO_BNL",
+        "index": false,
+        "sql": "SELECT /*+ NO_BNL(u, o) */ COUNT(*), SUM(o.amount) FROM algo_users u JOIN algo_orders o ON u.code = o.user_code",
+        "expected": [
+          10000,
+          4995000
+        ]
+      },
+      {
+        "name": "2-da-index",
+        "label": "(다) users.code 인덱스",
+        "index": true,
+        "sql": "SELECT COUNT(*), SUM(o.amount) FROM algo_users u JOIN algo_orders o ON u.code = o.user_code",
+        "expected": [
+          10000,
+          4995000
+        ]
+      },
+      {
+        "name": "2-da-small-index",
+        "label": "(다) 주문 10건, 인덱스 중첩 루프",
+        "index": true,
+        "sql": "SELECT COUNT(*), SUM(o.amount) FROM algo_users u JOIN algo_orders o ON u.code = o.user_code WHERE o.id <= 10",
+        "expected": [
+          10,
+          55
+        ]
+      },
+      {
+        "name": "2-da-small-hash",
+        "label": "(다) 주문 10건, 인덱스 끄고 해시 조인",
+        "index": true,
+        "sql": "SELECT /*+ NO_INDEX(u idx_code) */ COUNT(*), SUM(o.amount) FROM algo_users u JOIN algo_orders o ON u.code = o.user_code WHERE o.id <= 10",
+        "expected": [
+          10,
+          55
+        ]
+      }
+    ],
+    "n1": [
+      {
+        "name": "n-plus-1",
+        "label": "(가) N+1",
+        "queries": [
+          "SELECT id, name FROM n1_users ORDER BY id LIMIT %s",
+          "SELECT id, amount FROM n1_orders WHERE user_id = %s"
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "join",
+        "label": "(나) JOIN 한 번",
+        "queries": [
+          "SELECT u.id, u.name, o.id, o.amount FROM (SELECT id, name FROM n1_users ORDER BY id LIMIT %s) u LEFT JOIN n1_orders o ON o.user_id = u.id"
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "in-list",
+        "label": "(다) IN 두 번",
+        "queries": [
+          "SELECT id, name FROM n1_users ORDER BY id LIMIT %s",
+          "SELECT id, user_id, amount FROM n1_orders WHERE user_id IN ({placeholders})"
+        ],
+        "author": "에이전트"
+      },
+      {
+        "name": "in-subquery",
+        "label": "(라) IN 서브쿼리 한 번",
+        "queries": [
+          "SELECT o.id, o.user_id, o.amount FROM n1_orders o WHERE o.user_id IN (SELECT id FROM (SELECT id FROM n1_users ORDER BY id LIMIT %s) x)"
+        ],
+        "author": "사람(에이전트가 감쌈)"
+      }
+    ]
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "efd6142194fdb3d89b5dde2fbe88e8fec62b221f",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "join_lab.py": "b7676f32fa102278558715c743ec21d8adb00a1f8b64101cce4d874bbf0be5ac",
+    "join_cases.py": "6b80ce62c1130eed58df4882d0bcd872fca7a0d8ed4d1eac6f43ff0c36455488",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 134217728,
+      "join_buffer_size": 262144,
+      "optimizer_switch": "index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on",
+      "sql_mode": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               2 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               2 weeks ago",
+    "stderr": ""
+  }
+}
