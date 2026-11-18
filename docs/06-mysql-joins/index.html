@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>조인 관계도</title>
+<meta name="description" content="06 MySQL 조인과 SQL 실험 복습 화면: 조인의 종류와 조건의 자리, 세미 조인·안티 조인과 NOT IN, 조인 방식(중첩 루프 조인, 해시 조인), N+1을 작은 표로 한 단계씩 따라가는 설명용 화면">
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <p class="crumb">cs-lab · 06 MySQL 조인과 SQL</p>
+    <h1>조인 관계도</h1>
+  </div>
+  <nav class="links" aria-label="관련 문서">
+    <a href="../index.html">복습 화면 목록</a>
+    <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/06-mysql-joins/README.md">실험 README</a>
+  </nav>
+</header>
+
+<main>
+  <div id="scenes" class="scenes" role="group" aria-label="장면"></div>
+
+  <section class="pane ask" aria-labelledby="askTitle">
+    <h2 id="askTitle">먼저 생각해 볼 질문</h2>
+    <ol id="questions"></ol>
+    <label class="guess">내 예상 <textarea id="guess" rows="2" placeholder="단계를 넘기기 전에 적어 두기"></textarea></label>
+  </section>
+
+  <section class="pane" aria-labelledby="cfgTitle">
+    <h2 id="cfgTitle">구성 <span class="muted">고르면 처음 단계부터 다시 본다</span></h2>
+    <div id="choices" class="choices"></div>
+  </section>
+
+  <div class="controls" role="group" aria-label="단계 이동">
+    <button type="button" id="first" aria-label="처음 단계" title="처음 (Home)">⏮</button>
+    <button type="button" id="prev" aria-label="이전 단계" title="이전 (왼 방향키)">◀</button>
+    <span id="pos" class="pos" aria-live="polite"></span>
+    <button type="button" id="next" aria-label="다음 단계" title="다음 (오른 방향키)">▶</button>
+    <button type="button" id="last" aria-label="마지막 단계" title="마지막 (End)">⏭</button>
+  </div>
+
+  <section class="pane board-pane" aria-labelledby="boardTitle">
+    <h2 id="boardTitle">관계도</h2>
+    <div id="board" class="board"></div>
+    <p id="caption" class="caption"></p>
+    <dl id="tally" class="tally" aria-label="이 단계까지의 개수"></dl>
+    <ul class="legend" aria-label="표시 뜻">
+      <li><span class="sw sw-cur"></span>지금 따지는 행</li>
+      <li><span class="sw sw-hit"></span>조건이 TRUE인 짝</li>
+      <li><span class="sw sw-read"></span>읽고 비교했지만 짝이 아님</li>
+      <li><span class="sw sw-unk"></span>NULL과 비교해 UNKNOWN</li>
+      <li><span class="sw sw-new"></span>이 단계에 결과에 들어간 행</li>
+    </ul>
+  </section>
+
+  <section class="pane code-pane" aria-labelledby="codeTitle">
+    <h2 id="codeTitle">코드</h2>
+    <ol id="code" class="code"></ol>
+    <p id="plan" class="note"></p>
+  </section>
+
+  <section class="pane" aria-labelledby="stripTitle">
+    <h2 id="stripTitle">모든 단계 <span class="muted">칸을 누르면 그 단계로 간다</span></h2>
+    <ol id="strip" class="strip"></ol>
+  </section>
+
+  <section class="extra">
+    <details>
+      <summary>볼 것</summary>
+      <ul id="observe"></ul>
+    </details>
+    <details>
+      <summary>실험에서 잰 값 (모형과 별개)</summary>
+      <ul id="measured"></ul>
+      <p class="note">실험 README의 결과에서 옮겼다. 관계도의 단계 수와 개수는 모형 표의 값이라 이 값과 비례하지 않는다.</p>
+    </details>
+    <details>
+      <summary>근거와 복습 카드</summary>
+      <ul id="evidence"></ul>
+      <ul id="cards" class="cards"></ul>
+    </details>
+  </section>
+</main>
+
+<footer class="foot">설명용 모형이다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 실측값은 "실험에서 잰 값" 칸에만 있다. 화면을 만든 방법, 모형의 가정, 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/06-mysql-joins/README.md">화면 README</a>에 적었다.</footer>
+<script src="model.js"></script>
+<script src="content.js"></script>
+<script src="board.js"></script>
+</body>
+</html>
