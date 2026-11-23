@@ -14,3 +14,4 @@
 | 04 MySQL 락·데드락·커넥션 풀 | [복습 카드](04-mysql-locks-deadlocks-pool.md) | [실험 README](../experiments/04-mysql-locks-deadlocks-pool/README.md) |
 | 05 MySQL 인덱스와 실행 계획 | [복습 카드](05-mysql-indexes-explain.md) | [실험 README](../experiments/05-mysql-indexes-explain/README.md) |
 | 06 MySQL 조인과 SQL | [복습 카드](06-mysql-joins.md) | [실험 README](../experiments/06-mysql-joins/README.md) |
+| 07 스키마 설계와 정규화 | [복습 카드](07-schema-normalization.md) | [실험 README](../experiments/07-schema-normalization/README.md) |
