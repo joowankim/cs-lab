@@ -130,6 +130,13 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
     </ul>
     <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 장면 1·2의 결과 행은 맥 본 측정의 결과 행과 같다. 실측값은 "실험에서 잰 값" 칸에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/06-mysql-joins/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/06-mysql-joins/README.md">화면 README</a>에 적었다.</p>
   </section>
+  <section aria-labelledby="exp07">
+    <h2 id="exp07">07 스키마 설계와 정규화</h2>
+    <ul class="screens">
+      <li><a href="07-schema-normalization/index.html"><b>정규화 관계도</b><span class="desc">장면 셋(이상과 나누기, 정규화와 비정규화, 외래 키와 락)을 작은 표로 한 단계씩 따라간다. 한 표에서 갱신·삽입·삭제 이상이 생기는 행과 나눈 뒤 JOIN으로 되살린 행, 등급을 바꿀 때 고치는 행과 인덱스 항목, 테이블로 다시 가는 읽기, 외래 키 검사가 부모 행에 거는 S 모드 레코드 락과 B의 대기를 보이고, 코드와 모든 단계를 한눈에 보는 띠를 둔다.</span></a></li>
+    </ul>
+    <p class="note">화면은 설명용 모형(<code>model.js</code>)으로 움직인다. 단계는 이벤트의 순서이고 시간 길이가 아니다. 장면 1의 표와 이상·되살리기 결과는 실험 SQL과 같고, 장면 2의 고친 행 수 규칙과 계획 모양, 장면 3의 락은 원자료와 같다. 실측값은 "실험에서 잰 값" 칸에만 있고, 모두 <a href="https://github.com/joowankim/cs-lab/blob/main/experiments/07-schema-normalization/README.md">실험 README</a>의 결과에서 옮겼다. 화면을 만든 방법과 점검 결과는 <a href="https://github.com/joowankim/cs-lab/blob/main/docs/07-schema-normalization/README.md">화면 README</a>에 적었다.</p>
+  </section>
 </main>
 </body>
 </html>
