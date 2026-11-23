@@ -33,7 +33,7 @@
 | 4 | [MySQL 락·데드락·커넥션 풀](experiments/04-mysql-locks-deadlocks-pool/README.md) | 완료 (2026-11-06) |
 | 5 | [MySQL 인덱스와 실행 계획](experiments/05-mysql-indexes-explain/README.md) | 완료 (2026-11-14) |
 | 6 | [조인과 SQL](experiments/06-mysql-joins/README.md) | 완료 (2026-11-18) |
-| 7 | 스키마 설계와 정규화 | 예정 |
+| 7 | [스키마 설계와 정규화](experiments/07-schema-normalization/README.md) | 완료 (2026-11-23) |
 | 8 | 프로세스와 CPU | 예정 |
 | 9 | 메모리 | 예정 |
 | 10 | 자료구조 효율 직접 재기 | 예정 |

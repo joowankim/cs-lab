@@ -1,0 +1,217 @@
+{
+  "started_at": "2026-11-20T21:09:42.023292+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "normalization",
+  "validation": false,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/norm-lab-6ffc0beb1214cea1/bin/python3 python/norm_lab.py",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/norm-lab-6ffc0beb1214cea1/bin/python3",
+  "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "trials": 3,
+    "smoke": false,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "output_dir": null
+  },
+  "conditions": {
+    "schema": "lab7_perf",
+    "seed": 7,
+    "scale": {
+      "members": 100000,
+      "reservations": 1000000,
+      "cars": 1000
+    },
+    "heavy": 10000,
+    "regular_members": 99000,
+    "load_s": {
+      "members": 0.8281812090426683,
+      "cars": 0.01395970769226551,
+      "reservations_n": 9.276779707986861,
+      "reservations_d": 5.3800512496382,
+      "analyze": 0.053201125003397465,
+      "total": 15.593984209001064
+    },
+    "original_plans": {
+      "1": "일반",
+      "2": "일반"
+    },
+    "cases": [
+      {
+        "name": "q1",
+        "variant": "norm",
+        "sql": [
+          "SELECT r.id, r.started_at, m.plan FROM reservations_n r JOIN members m ON m.id = r.member_id WHERE r.member_id = 1 ORDER BY r.started_at DESC LIMIT 20"
+        ]
+      },
+      {
+        "name": "q1",
+        "variant": "denorm",
+        "sql": [
+          "SELECT id, started_at, member_plan FROM reservations_d WHERE member_id = 1 ORDER BY started_at DESC LIMIT 20"
+        ]
+      },
+      {
+        "name": "q2",
+        "variant": "norm",
+        "sql": [
+          "SELECT COUNT(*) FROM reservations_n r JOIN members m ON m.id = r.member_id WHERE m.plan = '골드'"
+        ]
+      },
+      {
+        "name": "q2",
+        "variant": "denorm",
+        "sql": [
+          "SELECT COUNT(*) FROM reservations_d WHERE member_plan = '골드'"
+        ]
+      },
+      {
+        "name": "u1",
+        "variant": "norm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s"
+        ]
+      },
+      {
+        "name": "u1",
+        "variant": "denorm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s",
+          "UPDATE reservations_d SET member_plan = %s WHERE member_id = %s"
+        ]
+      },
+      {
+        "name": "u2",
+        "variant": "norm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s"
+        ]
+      },
+      {
+        "name": "u2",
+        "variant": "denorm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s",
+          "UPDATE reservations_d SET member_plan = %s WHERE member_id = %s"
+        ]
+      }
+    ],
+    "expected": {
+      "q1": [
+        579983,
+        74018,
+        996726,
+        828565,
+        304973,
+        678528,
+        334802,
+        886277,
+        888206,
+        508858,
+        59281,
+        50034,
+        269134,
+        372069,
+        37770,
+        729852,
+        68773,
+        613661,
+        710848,
+        202454
+      ],
+      "q2": 197880,
+      "rows_affected": {
+        "u1-norm": 1,
+        "u1-denorm": 10001,
+        "u2-norm": 1,
+        "u2-denorm": 11
+      }
+    }
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "a9e218bc12f6b0766cc79af50c8abe4a8cdfd779",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "norm_lab.py": "b262b644f319a7b8344859e9e16c88aeea7a577916f25ae045ae0c2bfc4ce700",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.5",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=21889123)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 134217728,
+      "innodb_flush_log_at_trx_commit": 1,
+      "sync_binlog": 1,
+      "log_bin": 1,
+      "transaction_isolation": "REPEATABLE-READ",
+      "sql_mode": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+    }
+  },
+  "table_sizes": [
+    [
+      "cars",
+      1000,
+      81920,
+      49152
+    ],
+    [
+      "members",
+      99872,
+      5783552,
+      4734976
+    ],
+    [
+      "reservations_d",
+      997458,
+      46727168,
+      36257792
+    ],
+    [
+      "reservations_n",
+      997899,
+      39387136,
+      36257792
+    ]
+  ],
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               3 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               3 weeks ago",
+    "stderr": ""
+  },
+  "docker_stats_before": {
+    "returncode": 0,
+    "stdout": "cs-lab-postgres-1 cpu=2.64% mem=36.42MiB / 7.653GiB\ncs-lab-mysql-1 cpu=1.44% mem=968.1MiB / 7.653GiB",
+    "stderr": ""
+  }
+}

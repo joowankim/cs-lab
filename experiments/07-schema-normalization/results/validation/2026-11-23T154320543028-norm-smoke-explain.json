@@ -1,0 +1,358 @@
+{
+  "q1-norm": {
+    "traditional_0": [
+      [
+        1,
+        "SIMPLE",
+        "m",
+        null,
+        "const",
+        "PRIMARY",
+        "PRIMARY",
+        "4",
+        "const",
+        1,
+        100.0,
+        null
+      ],
+      [
+        1,
+        "SIMPLE",
+        "r",
+        null,
+        "ref",
+        "idx_member",
+        "idx_member",
+        "4",
+        "const",
+        100,
+        100.0,
+        "Backward index scan; Using index"
+      ]
+    ],
+    "tree_0": "-> Limit: 20 row(s)  (cost=10.3 rows=20)\n    -> Covering index lookup on r using idx_member (member_id=1) (reverse)  (cost=10.3 rows=100)\n",
+    "analyze_0": "-> Limit: 20 row(s)  (cost=10.3 rows=20) (actual time=0.512..0.525 rows=20 loops=1)\n    -> Covering index lookup on r using idx_member (member_id=1) (reverse)  (cost=10.3 rows=100) (actual time=0.505..0.517 rows=20 loops=1)\n"
+  },
+  "q1-denorm": {
+    "traditional_0": [
+      [
+        1,
+        "SIMPLE",
+        "reservations_d",
+        null,
+        "ref",
+        "idx_member",
+        "idx_member",
+        "4",
+        "const",
+        100,
+        100.0,
+        "Backward index scan"
+      ]
+    ],
+    "tree_0": "-> Limit: 20 row(s)  (cost=32.5 rows=20)\n    -> Index lookup on reservations_d using idx_member (member_id=1) (reverse)  (cost=32.5 rows=100)\n",
+    "analyze_0": "-> Limit: 20 row(s)  (cost=32.5 rows=20) (actual time=0.0992..0.102 rows=20 loops=1)\n    -> Index lookup on reservations_d using idx_member (member_id=1) (reverse)  (cost=32.5 rows=100) (actual time=0.0989..0.101 rows=20 loops=1)\n"
+  },
+  "q2-norm": {
+    "traditional_0": [
+      [
+        1,
+        "SIMPLE",
+        "m",
+        null,
+        "ALL",
+        "PRIMARY",
+        null,
+        null,
+        null,
+        1000,
+        10.0,
+        "Using where"
+      ],
+      [
+        1,
+        "SIMPLE",
+        "r",
+        null,
+        "ref",
+        "idx_member",
+        "idx_member",
+        "4",
+        "lab7_perf.m.id",
+        10,
+        100.0,
+        "Using index"
+      ]
+    ],
+    "tree_0": "-> Aggregate: count(0)  (cost=327 rows=1)\n    -> Nested loop inner join  (cost=227 rows=1001)\n        -> Filter: (m.plan = '골드')  (cost=101 rows=100)\n            -> Table scan on m  (cost=101 rows=1000)\n        -> Covering index lookup on r using idx_member (member_id=m.id)  (cost=0.264 rows=10)\n",
+    "analyze_0": "-> Aggregate: count(0)  (cost=327 rows=1) (actual time=1.33..1.33 rows=1 loops=1)\n    -> Nested loop inner join  (cost=227 rows=1001) (actual time=0.0261..0.855 rows=1980 loops=1)\n        -> Filter: (m.plan = '골드')  (cost=101 rows=100) (actual time=0.019..0.268 rows=200 loops=1)\n            -> Table scan on m  (cost=101 rows=1000) (actual time=0.0133..0.16 rows=1000 loops=1)\n        -> Covering index lookup on r using idx_member (member_id=m.id)  (cost=0.264 rows=10) (actual time=0.0014..0.00219 rows=9.9 loops=200)\n"
+  },
+  "q2-denorm": {
+    "traditional_0": [
+      [
+        1,
+        "SIMPLE",
+        "reservations_d",
+        null,
+        "ALL",
+        null,
+        null,
+        null,
+        null,
+        9799,
+        10.0,
+        "Using where"
+      ]
+    ],
+    "tree_0": "-> Aggregate: count(0)  (cost=1085 rows=1)\n    -> Filter: (reservations_d.member_plan = '골드')  (cost=987 rows=980)\n        -> Table scan on reservations_d  (cost=987 rows=9799)\n",
+    "analyze_0": "-> Aggregate: count(0)  (cost=1085 rows=1) (actual time=2.42..2.42 rows=1 loops=1)\n    -> Filter: (reservations_d.member_plan = '골드')  (cost=987 rows=980) (actual time=0.0615..2.34 rows=1980 loops=1)\n        -> Table scan on reservations_d  (cost=987 rows=9799) (actual time=0.0587..1.3 rows=10000 loops=1)\n"
+  },
+  "u1-norm": {
+    "traditional_0": [
+      [
+        1,
+        "UPDATE",
+        "members",
+        null,
+        "range",
+        "PRIMARY",
+        "PRIMARY",
+        "4",
+        "const",
+        1,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_0": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "members",
+          "access_type": "range",
+          "possible_keys": [
+            "PRIMARY"
+          ],
+          "key": "PRIMARY",
+          "used_key_parts": [
+            "id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 1,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`members`.`id` = 1)"
+        }
+      }
+    }
+  },
+  "u1-denorm": {
+    "traditional_0": [
+      [
+        1,
+        "UPDATE",
+        "members",
+        null,
+        "range",
+        "PRIMARY",
+        "PRIMARY",
+        "4",
+        "const",
+        1,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_0": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "members",
+          "access_type": "range",
+          "possible_keys": [
+            "PRIMARY"
+          ],
+          "key": "PRIMARY",
+          "used_key_parts": [
+            "id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 1,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`members`.`id` = 1)"
+        }
+      }
+    },
+    "traditional_1": [
+      [
+        1,
+        "UPDATE",
+        "reservations_d",
+        null,
+        "range",
+        "idx_member",
+        "idx_member",
+        "4",
+        "const",
+        100,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_1": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "reservations_d",
+          "access_type": "range",
+          "possible_keys": [
+            "idx_member"
+          ],
+          "key": "idx_member",
+          "used_key_parts": [
+            "member_id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 100,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`reservations_d`.`member_id` = 1)"
+        }
+      }
+    }
+  },
+  "u2-norm": {
+    "traditional_0": [
+      [
+        1,
+        "UPDATE",
+        "members",
+        null,
+        "range",
+        "PRIMARY",
+        "PRIMARY",
+        "4",
+        "const",
+        1,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_0": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "members",
+          "access_type": "range",
+          "possible_keys": [
+            "PRIMARY"
+          ],
+          "key": "PRIMARY",
+          "used_key_parts": [
+            "id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 1,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`members`.`id` = 2)"
+        }
+      }
+    }
+  },
+  "u2-denorm": {
+    "traditional_0": [
+      [
+        1,
+        "UPDATE",
+        "members",
+        null,
+        "range",
+        "PRIMARY",
+        "PRIMARY",
+        "4",
+        "const",
+        1,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_0": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "members",
+          "access_type": "range",
+          "possible_keys": [
+            "PRIMARY"
+          ],
+          "key": "PRIMARY",
+          "used_key_parts": [
+            "id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 1,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`members`.`id` = 2)"
+        }
+      }
+    },
+    "traditional_1": [
+      [
+        1,
+        "UPDATE",
+        "reservations_d",
+        null,
+        "range",
+        "idx_member",
+        "idx_member",
+        "4",
+        "const",
+        10,
+        100.0,
+        "Using where"
+      ]
+    ],
+    "json_1": {
+      "query_block": {
+        "select_id": 1,
+        "table": {
+          "update": true,
+          "table_name": "reservations_d",
+          "access_type": "range",
+          "possible_keys": [
+            "idx_member"
+          ],
+          "key": "idx_member",
+          "used_key_parts": [
+            "member_id"
+          ],
+          "key_length": "4",
+          "ref": [
+            "const"
+          ],
+          "rows_examined_per_scan": 10,
+          "filtered": "100.00",
+          "attached_condition": "(`lab7_perf`.`reservations_d`.`member_id` = 2)"
+        }
+      }
+    }
+  }
+}

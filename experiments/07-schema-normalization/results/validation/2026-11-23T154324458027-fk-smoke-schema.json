@@ -1,0 +1,170 @@
+{
+  "reservations_auto": {
+    "show_create_table": "CREATE TABLE `reservations_auto` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `member_id` int NOT NULL,\n  `car_id` int NOT NULL,\n  `started_at` datetime NOT NULL,\n  PRIMARY KEY (`id`),\n  KEY `member_id` (`member_id`),\n  KEY `car_id` (`car_id`),\n  CONSTRAINT `reservations_auto_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`),\n  CONSTRAINT `reservations_auto_ibfk_2` FOREIGN KEY (`car_id`) REFERENCES `cars` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+    "show_index": [
+      {
+        "Table": "reservations_auto",
+        "Non_unique": 0,
+        "Key_name": "PRIMARY",
+        "Seq_in_index": 1,
+        "Column_name": "id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "reservations_auto",
+        "Non_unique": 1,
+        "Key_name": "member_id",
+        "Seq_in_index": 1,
+        "Column_name": "member_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "reservations_auto",
+        "Non_unique": 1,
+        "Key_name": "car_id",
+        "Seq_in_index": 1,
+        "Column_name": "car_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      }
+    ]
+  },
+  "res_fk": {
+    "show_create_table": "CREATE TABLE `res_fk` (\n  `id` int NOT NULL,\n  `member_id` int NOT NULL,\n  `car_id` int NOT NULL,\n  `started_at` datetime NOT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_member` (`member_id`),\n  KEY `idx_car` (`car_id`),\n  CONSTRAINT `res_fk_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `members` (`id`),\n  CONSTRAINT `res_fk_ibfk_2` FOREIGN KEY (`car_id`) REFERENCES `cars` (`id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+    "show_index": [
+      {
+        "Table": "res_fk",
+        "Non_unique": 0,
+        "Key_name": "PRIMARY",
+        "Seq_in_index": 1,
+        "Column_name": "id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "res_fk",
+        "Non_unique": 1,
+        "Key_name": "idx_member",
+        "Seq_in_index": 1,
+        "Column_name": "member_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "res_fk",
+        "Non_unique": 1,
+        "Key_name": "idx_car",
+        "Seq_in_index": 1,
+        "Column_name": "car_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      }
+    ]
+  },
+  "res_nofk": {
+    "show_create_table": "CREATE TABLE `res_nofk` (\n  `id` int NOT NULL,\n  `member_id` int NOT NULL,\n  `car_id` int NOT NULL,\n  `started_at` datetime NOT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_member` (`member_id`),\n  KEY `idx_car` (`car_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci",
+    "show_index": [
+      {
+        "Table": "res_nofk",
+        "Non_unique": 0,
+        "Key_name": "PRIMARY",
+        "Seq_in_index": 1,
+        "Column_name": "id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "res_nofk",
+        "Non_unique": 1,
+        "Key_name": "idx_member",
+        "Seq_in_index": 1,
+        "Column_name": "member_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      },
+      {
+        "Table": "res_nofk",
+        "Non_unique": 1,
+        "Key_name": "idx_car",
+        "Seq_in_index": 1,
+        "Column_name": "car_id",
+        "Collation": "A",
+        "Cardinality": 0,
+        "Sub_part": null,
+        "Packed": null,
+        "Null": "",
+        "Index_type": "BTREE",
+        "Comment": "",
+        "Index_comment": "",
+        "Visible": "YES",
+        "Expression": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "started_at": "2026-11-23T15:43:24.458027+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "foreign-key",
+  "validation": true,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/fk-lab-3d08ad2b4739ee8e/bin/python3 python/fk_lab.py --smoke --parts schema insert",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/fk-lab-3d08ad2b4739ee8e/bin/python3",
+  "platform": "macOS-26.7.3-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "parts": [
+      "schema",
+      "insert"
+    ],
+    "trials": 2,
+    "smoke": true,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "output_dir": null
+  },
+  "conditions": {
+    "schema": "lab7_fk",
+    "seed": 7,
+    "scale": {
+      "members": 1000,
+      "cars": 100,
+      "reservations": 10000,
+      "batch": 1000
+    },
+    "load_parents_s": 0.06321495902375318,
+    "tables": {
+      "parents": [
+        "DROP TABLE IF EXISTS reservations_auto, res_fk, res_nofk, members, cars",
+        "CREATE TABLE members (id INT PRIMARY KEY, name VARCHAR(20) NOT NULL, plan VARCHAR(10) NOT NULL)",
+        "CREATE TABLE cars (id INT PRIMARY KEY, number VARCHAR(20) NOT NULL UNIQUE)"
+      ],
+      "auto": "CREATE TABLE reservations_auto (\n  id INT AUTO_INCREMENT PRIMARY KEY, member_id INT NOT NULL, car_id INT NOT NULL, started_at DATETIME NOT NULL,\n  FOREIGN KEY (member_id) REFERENCES members(id), FOREIGN KEY (car_id) REFERENCES cars(id))",
+      "res_fk": "CREATE TABLE res_fk (\n  id INT PRIMARY KEY, member_id INT NOT NULL, car_id INT NOT NULL, started_at DATETIME NOT NULL,\n  KEY idx_member (member_id), KEY idx_car (car_id),\n  FOREIGN KEY (member_id) REFERENCES members(id), FOREIGN KEY (car_id) REFERENCES cars(id))",
+      "res_nofk": "CREATE TABLE res_nofk (\n  id INT PRIMARY KEY, member_id INT NOT NULL, car_id INT NOT NULL, started_at DATETIME NOT NULL,\n  KEY idx_member (member_id), KEY idx_car (car_id))"
+    },
+    "lock_timeout_s": 3
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "a9e218bc12f6b0766cc79af50c8abe4a8cdfd779",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "fk_lab.py": "6303a295efde68c1c4fd7b2c8a171e3861c6d18fdac4822987aed1b5ff722b12",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.7.3",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=36241507)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 134217728,
+      "innodb_flush_log_at_trx_commit": 1,
+      "sync_binlog": 1,
+      "log_bin": 1,
+      "transaction_isolation": "REPEATABLE-READ",
+      "innodb_lock_wait_timeout": 50,
+      "foreign_key_checks": 1
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               3 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               3 weeks ago",
+    "stderr": ""
+  },
+  "docker_stats_before": {
+    "returncode": 0,
+    "stdout": "cs-lab-mysql-1 cpu=0.92% mem=527.4MiB / 7.653GiB",
+    "stderr": ""
+  }
+}

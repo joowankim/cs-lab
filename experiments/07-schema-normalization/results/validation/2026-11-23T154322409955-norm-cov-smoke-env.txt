@@ -1,0 +1,279 @@
+{
+  "started_at": "2026-11-23T15:43:22.409955+09:00",
+  "timezone": "Asia/Seoul",
+  "purpose": "normalization",
+  "validation": true,
+  "command": "/Users/kimjoowan/.cache/uv/environments-v2/norm-lab-6ffc0beb1214cea1/bin/python3 python/norm_lab.py --smoke --denorm-index cov",
+  "python": "3.14.2 (main, Dec  5 2025, 16:49:16) [Clang 17.0.0 (clang-1700.4.4.1)]",
+  "executable": "/Users/kimjoowan/.cache/uv/environments-v2/norm-lab-6ffc0beb1214cea1/bin/python3",
+  "platform": "macOS-26.7.3-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "logical_cpus": 12,
+  "available_cpus": 12,
+  "gil_enabled": true,
+  "free_threaded_build": false,
+  "config": {
+    "trials": 2,
+    "denorm_index": "cov",
+    "smoke": true,
+    "mysql": "127.0.0.1:13306",
+    "password": null,
+    "output_dir": null
+  },
+  "conditions": {
+    "schema": "lab7_perf",
+    "seed": 7,
+    "scale": {
+      "members": 1000,
+      "reservations": 10000,
+      "cars": 1000
+    },
+    "heavy": 100,
+    "regular_members": 990,
+    "load_s": {
+      "members": 0.013352749985642731,
+      "cars": 0.014747749984962866,
+      "reservations_n": 0.11288241599686444,
+      "reservations_d": 0.07096795900724828,
+      "analyze": 0.005983459006529301,
+      "total": 0.26421845800359733,
+      "denorm_index_change": 0.024427500000456348
+    },
+    "original_plans": {
+      "1": "일반",
+      "2": "일반"
+    },
+    "cases": [
+      {
+        "name": "q1",
+        "variant": "norm",
+        "sql": [
+          "SELECT r.id, r.started_at, m.plan FROM reservations_n r JOIN members m ON m.id = r.member_id WHERE r.member_id = 1 ORDER BY r.started_at DESC LIMIT 20"
+        ]
+      },
+      {
+        "name": "q1",
+        "variant": "denorm_cov",
+        "sql": [
+          "SELECT id, started_at, member_plan FROM reservations_d WHERE member_id = 1 ORDER BY started_at DESC LIMIT 20"
+        ]
+      },
+      {
+        "name": "q2",
+        "variant": "norm",
+        "sql": [
+          "SELECT COUNT(*) FROM reservations_n r JOIN members m ON m.id = r.member_id WHERE m.plan = '골드'"
+        ]
+      },
+      {
+        "name": "q2",
+        "variant": "denorm_cov",
+        "sql": [
+          "SELECT COUNT(*) FROM reservations_d WHERE member_plan = '골드'"
+        ]
+      },
+      {
+        "name": "u1",
+        "variant": "norm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s"
+        ]
+      },
+      {
+        "name": "u1",
+        "variant": "denorm_cov",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s",
+          "UPDATE reservations_d SET member_plan = %s WHERE member_id = %s"
+        ]
+      },
+      {
+        "name": "u2",
+        "variant": "norm",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s"
+        ]
+      },
+      {
+        "name": "u2",
+        "variant": "denorm_cov",
+        "sql": [
+          "UPDATE members SET plan = %s WHERE id = %s",
+          "UPDATE reservations_d SET member_plan = %s WHERE member_id = %s"
+        ]
+      }
+    ],
+    "expected": {
+      "q1": [
+        9341,
+        3833,
+        8875,
+        7521,
+        9477,
+        1505,
+        5375,
+        7941,
+        485,
+        1795,
+        313,
+        7894,
+        5439,
+        4830,
+        6482,
+        9041,
+        118,
+        9489,
+        2174,
+        8825
+      ],
+      "q2": 1980,
+      "rows_affected": {
+        "u1-norm": 1,
+        "u1-denorm_cov": 101,
+        "u2-norm": 1,
+        "u2-denorm_cov": 11
+      }
+    }
+  },
+  "commit": {
+    "returncode": 0,
+    "stdout": "a9e218bc12f6b0766cc79af50c8abe4a8cdfd779",
+    "stderr": ""
+  },
+  "working_tree": {
+    "returncode": 0,
+    "stdout": "M ../../README.md\n?? ./",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "norm_lab.py": "ff2283da2ec7c49268a58839053d0cf00a3e9f8e310448ed1bba6badb06f4fd4",
+    "lab_env.py": "91dd22b1bfb9113947b0864c0175baabfb24f41f57460fff5b35b8785af38f47"
+  },
+  "hardware": {
+    "returncode": 0,
+    "stdout": "machdep.cpu.brand_string: Apple M2 Pro\nhw.physicalcpu: 12\nhw.logicalcpu: 12\nhw.perflevel0.name: Performance\nhw.perflevel0.physicalcpu: 8\nhw.perflevel1.name: Efficiency\nhw.perflevel1.physicalcpu: 4",
+    "stderr": ""
+  },
+  "os_version": {
+    "returncode": 0,
+    "stdout": "26.7.3",
+    "stderr": ""
+  },
+  "power": {
+    "returncode": 0,
+    "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=36241507)\t80%; AC attached; not charging present: true",
+    "stderr": ""
+  },
+  "uv": {
+    "returncode": 0,
+    "stdout": "uv 0.12.5 (Homebrew 2026-08-14 aarch64-apple-darwin)",
+    "stderr": ""
+  },
+  "databases": {
+    "mysql": {
+      "version": "8.4.13",
+      "innodb_buffer_pool_size": 134217728,
+      "innodb_flush_log_at_trx_commit": 1,
+      "sync_binlog": 1,
+      "log_bin": 1,
+      "transaction_isolation": "REPEATABLE-READ",
+      "sql_mode": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
+    }
+  },
+  "table_sizes": {
+    "before_index_change": {
+      "tables": [
+        [
+          "cars",
+          1000,
+          81920,
+          49152
+        ],
+        [
+          "members",
+          1000,
+          81920,
+          49152
+        ],
+        [
+          "reservations_d",
+          10093,
+          491520,
+          278528
+        ],
+        [
+          "reservations_n",
+          9921,
+          409600,
+          278528
+        ]
+      ],
+      "indexes": [
+        [
+          "reservations_d",
+          "PRIMARY",
+          30,
+          491520
+        ],
+        [
+          "reservations_d",
+          "idx_member",
+          17,
+          278528
+        ]
+      ]
+    },
+    "after_index_change": {
+      "tables": [
+        [
+          "cars",
+          1000,
+          81920,
+          49152
+        ],
+        [
+          "members",
+          1000,
+          81920,
+          49152
+        ],
+        [
+          "reservations_d",
+          9799,
+          491520,
+          278528
+        ],
+        [
+          "reservations_n",
+          9921,
+          409600,
+          278528
+        ]
+      ],
+      "indexes": [
+        [
+          "reservations_d",
+          "PRIMARY",
+          30,
+          491520
+        ],
+        [
+          "reservations_d",
+          "idx_member_cov",
+          17,
+          278528
+        ]
+      ]
+    }
+  },
+  "docker_images": {
+    "returncode": 0,
+    "stdout": "CONTAINER           REPOSITORY          TAG                 PLATFORM            IMAGE ID            SIZE                CREATED\ncs-lab-mysql-1      mysql               8.4.13              linux/arm64/v8      a0225d1ea663        233MB               3 weeks ago\ncs-lab-postgres-1   postgres            18.6                linux/arm64/v8      979bccfde354        161MB               3 weeks ago",
+    "stderr": ""
+  },
+  "docker_stats_before": {
+    "returncode": 0,
+    "stdout": "cs-lab-mysql-1 cpu=0.75% mem=525MiB / 7.653GiB",
+    "stderr": ""
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "res_fk": {
+    "locks_held_before_update": [
+      {
+        "ENGINE_TRANSACTION_ID": 596274,
+        "OBJECT_NAME": "res_fk",
+        "INDEX_NAME": null,
+        "LOCK_TYPE": "TABLE",
+        "LOCK_MODE": "IX",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": null
+      },
+      {
+        "ENGINE_TRANSACTION_ID": 596274,
+        "OBJECT_NAME": "members",
+        "INDEX_NAME": null,
+        "LOCK_TYPE": "TABLE",
+        "LOCK_MODE": "IS",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": null
+      },
+      {
+        "ENGINE_TRANSACTION_ID": 596274,
+        "OBJECT_NAME": "cars",
+        "INDEX_NAME": null,
+        "LOCK_TYPE": "TABLE",
+        "LOCK_MODE": "IS",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": null
+      },
+      {
+        "ENGINE_TRANSACTION_ID": 596274,
+        "OBJECT_NAME": "cars",
+        "INDEX_NAME": "PRIMARY",
+        "LOCK_TYPE": "RECORD",
+        "LOCK_MODE": "S,REC_NOT_GAP",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": "1"
+      },
+      {
+        "ENGINE_TRANSACTION_ID": 596274,
+        "OBJECT_NAME": "members",
+        "INDEX_NAME": "PRIMARY",
+        "LOCK_TYPE": "RECORD",
+        "LOCK_MODE": "S,REC_NOT_GAP",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": "1"
+      }
+    ],
+    "waiting_during_update": [
+      {
+        "ENGINE_TRANSACTION_ID": 596276,
+        "OBJECT_NAME": "members",
+        "INDEX_NAME": "PRIMARY",
+        "LOCK_TYPE": "RECORD",
+        "LOCK_MODE": "X,REC_NOT_GAP",
+        "LOCK_STATUS": "WAITING",
+        "LOCK_DATA": "1"
+      }
+    ],
+    "error": [
+      1205,
+      "Lock wait timeout exceeded; try restarting transaction"
+    ],
+    "waited_s": 3.017348208988551
+  },
+  "res_nofk": {
+    "locks_held_before_update": [
+      {
+        "ENGINE_TRANSACTION_ID": 596278,
+        "OBJECT_NAME": "res_nofk",
+        "INDEX_NAME": null,
+        "LOCK_TYPE": "TABLE",
+        "LOCK_MODE": "IX",
+        "LOCK_STATUS": "GRANTED",
+        "LOCK_DATA": null
+      }
+    ],
+    "waiting_during_update": [],
+    "rows_affected": 1,
+    "error": null,
+    "waited_s": 0.0017097500094678253
+  }
+}
